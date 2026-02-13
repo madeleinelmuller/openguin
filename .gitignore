@@ -1,0 +1,33 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserdata/
+*.xcworkspace/
+!*.xcworkspace/contents.xcworkspacedata
+xcuserdata/
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# CocoaPods
+Pods/
+
+# OS files
+.DS_Store
+*.swp
+*~.nib
+*.pbxuser
+*.perspective
+*.perspectivev3
+
+# App packaging
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
