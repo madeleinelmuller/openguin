@@ -35,23 +35,16 @@ struct MessageBubbleView: View {
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                 } else {
-                    // Assistant message with glass effect
                     GlassEffectContainer {
                         VStack(alignment: .leading, spacing: 0) {
-                            if message.content.isEmpty && message.isStreaming {
-                                // Empty streaming state handled by typing indicator
-                                EmptyView()
-                            } else {
-                                Text(LocalizedStringKey(message.content))
-                                    .font(.body)
-                                    .textSelection(.enabled)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 10)
-                            }
+                            Text(LocalizedStringKey(message.content))
+                                .font(.body)
+                                .textSelection(.enabled)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
 
-                            if message.isStreaming && !message.content.isEmpty {
-                                // Streaming cursor
-                                HStack(spacing: 2) {
+                            if message.isStreaming {
+                                HStack {
                                     Spacer()
                                     Circle()
                                         .fill(.primary.opacity(0.4))

@@ -2,9 +2,7 @@ import SwiftUI
 
 struct ChatView: View {
     @State private var viewModel = ChatViewModel()
-    @State private var scrollToBottom = false
     @State private var showNewChatConfirm = false
-    @Namespace private var chatNamespace
 
     var body: some View {
         NavigationStack {
@@ -117,7 +115,7 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(viewModel.messages) { message in
+                    ForEach(viewModel.messages.filter { !($0.content.isEmpty && $0.isStreaming) }) { message in
                         MessageBubbleView(message: message)
                             .id(message.id)
                             .transition(.asymmetric(
@@ -126,9 +124,7 @@ struct ChatView: View {
                             ))
                     }
 
-                    if viewModel.isLoading,
-                       let last = viewModel.messages.last,
-                       last.content.isEmpty && last.isStreaming {
+                    if let last = viewModel.messages.last, last.isStreaming && last.content.isEmpty {
                         TypingIndicatorView()
                             .id("typing")
                     }

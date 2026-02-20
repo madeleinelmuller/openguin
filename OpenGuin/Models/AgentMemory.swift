@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct MemoryFile: Identifiable, Codable {
     var id: String { path }
@@ -12,6 +13,19 @@ struct MemoryFile: Identifiable, Codable {
 
     var isDirectory: Bool {
         path.hasSuffix("/")
+    }
+
+    var icon: String {
+        if fileName == "about_me.md" { return "person.text.rectangle" }
+        if fileName == "about_user.md" { return "person.crop.circle" }
+        if fileName.hasSuffix(".md") { return "doc.text" }
+        return "doc"
+    }
+
+    var color: Color {
+        if fileName == "about_me.md" { return .blue }
+        if fileName == "about_user.md" { return .green }
+        return .orange
     }
 }
 
