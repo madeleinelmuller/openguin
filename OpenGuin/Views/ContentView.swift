@@ -2,7 +2,6 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var selectedTab: AppTab = .chat
-    @Namespace private var tabNamespace
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -18,7 +17,6 @@ struct ContentView: View {
                 SettingsView()
             }
         }
-        .tabViewStyle(.automatic)
         .onReceive(NotificationCenter.default.publisher(for: .switchToSettings)) { _ in
             withAnimation(.smooth) {
                 selectedTab = .settings

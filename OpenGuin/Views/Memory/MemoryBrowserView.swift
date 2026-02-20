@@ -3,8 +3,6 @@ import SwiftUI
 struct MemoryBrowserView: View {
     @State private var memoryStructure: MemoryDirectory?
     @State private var selectedFile: MemoryFile?
-    @State private var isRefreshing = false
-    @Namespace private var memoryNamespace
 
     var body: some View {
         NavigationStack {
@@ -25,22 +23,16 @@ struct MemoryBrowserView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         if let structure = memoryStructure {
-                            // Root files
                             ForEach(structure.files) { file in
-                                MemoryFileRow(file: file, namespace: memoryNamespace) {
+                                MemoryFileRow(file: file) {
                                     selectedFile = file
                                 }
                             }
 
-                            // Subdirectories
                             ForEach(structure.subdirectories) { dir in
-                                MemoryDirectorySection(
-                                    directory: dir,
-                                    namespace: memoryNamespace,
-                                    onSelectFile: { file in
-                                        selectedFile = file
-                                    }
-                                )
+                                MemoryDirectorySection(directory: dir) { file in
+                                    selectedFile = file
+                                }
                             }
                         } else {
                             GlassEffectContainer {
@@ -88,12 +80,10 @@ struct MemoryBrowserView: View {
     }
 
     private func refreshMemory() async {
-        isRefreshing = true
         let structure = await MemoryManager.shared.getMemoryStructure()
         withAnimation(.smooth) {
             memoryStructure = structure
         }
-        isRefreshing = false
     }
 }
 
@@ -101,17 +91,16 @@ struct MemoryBrowserView: View {
 
 struct MemoryFileRow: View {
     let file: MemoryFile
-    let namespace: Namespace.ID
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                Image(systemName: fileIcon)
+                Image(systemName: file.icon)
                     .font(.title3)
-                    .foregroundStyle(fileColor)
+                    .foregroundStyle(file.color)
                     .frame(width: 36, height: 36)
-                    .glassEffect(.regular.tint(fileColor.opacity(0.3)), in: RoundedRectangle(cornerRadius: 10))
+                    .glassEffect(.regular.tint(file.color.opacity(0.3)), in: RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(file.fileName)
@@ -143,26 +132,12 @@ struct MemoryFileRow: View {
         }
         .buttonStyle(.plain)
     }
-
-    private var fileIcon: String {
-        if file.fileName == "about_me.md" { return "person.text.rectangle" }
-        if file.fileName == "about_user.md" { return "person.crop.circle" }
-        if file.fileName.hasSuffix(".md") { return "doc.text" }
-        return "doc"
-    }
-
-    private var fileColor: Color {
-        if file.fileName == "about_me.md" { return .blue }
-        if file.fileName == "about_user.md" { return .green }
-        return .orange
-    }
 }
 
 // MARK: - Directory Section
 
 struct MemoryDirectorySection: View {
     let directory: MemoryDirectory
-    let namespace: Namespace.ID
     let onSelectFile: (MemoryFile) -> Void
     @State private var isExpanded = true
 
@@ -202,19 +177,15 @@ struct MemoryDirectorySection: View {
 
                 if isExpanded {
                     ForEach(directory.files) { file in
-                        MemoryFileRow(file: file, namespace: namespace) {
+                        MemoryFileRow(file: file) {
                             onSelectFile(file)
                         }
                         .padding(.leading, 16)
                     }
 
                     ForEach(directory.subdirectories) { subdir in
-                        MemoryDirectorySection(
-                            directory: subdir,
-                            namespace: namespace,
-                            onSelectFile: onSelectFile
-                        )
-                        .padding(.leading, 16)
+                        MemoryDirectorySection(directory: subdir, onSelectFile: onSelectFile)
+                            .padding(.leading, 16)
                     }
                 }
             }

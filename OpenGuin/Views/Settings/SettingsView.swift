@@ -2,8 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @State private var viewModel = SettingsViewModel()
-    @Namespace private var settingsNamespace
-    @State private var showAbout = false
 
     var body: some View {
         NavigationStack {

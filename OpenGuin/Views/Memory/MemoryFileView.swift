@@ -23,17 +23,17 @@ struct MemoryFileView: View {
                         // File info header
                         GlassEffectContainer {
                             HStack(spacing: 12) {
-                                Image(systemName: iconForFile)
+                                Image(systemName: file.icon)
                                     .font(.title2)
-                                    .foregroundStyle(colorForFile)
+                                    .foregroundStyle(file.color)
                                     .frame(width: 44, height: 44)
-                                    .glassEffect(.regular.tint(colorForFile.opacity(0.3)), in: RoundedRectangle(cornerRadius: 12))
+                                    .glassEffect(.regular.tint(file.color.opacity(0.3)), in: RoundedRectangle(cornerRadius: 12))
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(file.fileName)
                                         .font(.headline)
 
-                                    Text("Last modified: \(file.lastModified, style: .relative) ago")
+                                    Text("Modified \(file.lastModified, style: .relative)")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
 
@@ -50,14 +50,12 @@ struct MemoryFileView: View {
 
                         // File content
                         GlassEffectContainer {
-                            VStack(alignment: .leading) {
-                                Text(LocalizedStringKey(file.content))
-                                    .font(.body)
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(16)
-                            }
-                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                            Text(LocalizedStringKey(file.content))
+                                .font(.body)
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(16)
+                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
                         }
                     }
                     .padding(.horizontal, 16)
@@ -73,19 +71,6 @@ struct MemoryFileView: View {
                 }
             }
         }
-    }
-
-    private var iconForFile: String {
-        if file.fileName == "about_me.md" { return "person.text.rectangle" }
-        if file.fileName == "about_user.md" { return "person.crop.circle" }
-        if file.fileName.hasSuffix(".md") { return "doc.text" }
-        return "doc"
-    }
-
-    private var colorForFile: Color {
-        if file.fileName == "about_me.md" { return .blue }
-        if file.fileName == "about_user.md" { return .green }
-        return .orange
     }
 }
 
