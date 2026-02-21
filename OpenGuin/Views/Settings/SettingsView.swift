@@ -263,9 +263,9 @@ struct SettingsView: View {
     private var aboutSection: some View {
         GlassEffectContainer {
             VStack(spacing: 12) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 40))
-                    .foregroundStyle(.black)
+                Image("OpenGuinIcon")
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: 72, height: 72)
                     .glassEffect(.regular, in: .circle)
 

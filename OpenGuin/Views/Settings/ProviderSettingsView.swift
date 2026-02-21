@@ -47,14 +47,14 @@ struct ProviderSettingsView: View {
                     VStack(spacing: 24) {
                         // Header with icon
                         VStack(spacing: 12) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 48))
-                                .foregroundStyle(.black)
+                            Image("OpenGuinIcon")
+                                .resizable()
+                                .scaledToFit()
                                 .frame(width: 100, height: 100)
                                 .glassEffect(.regular, in: .circle)
 
                             VStack(spacing: 4) {
-                                Text("OpenGuin Settings")
+                                Text("openguin")
                                     .font(.title.weight(.bold))
                                     .foregroundStyle(.black)
 

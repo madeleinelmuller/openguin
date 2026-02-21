@@ -34,7 +34,7 @@ struct ChatView: View {
                     )
                 }
             }
-            .navigationTitle("OpenGuin")
+            .navigationTitle("openguin")
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -85,13 +85,13 @@ struct ChatView: View {
 
             GlassEffectContainer {
                 VStack(spacing: 16) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 56))
-                        .foregroundStyle(.black)
+                    Image("OpenGuinIcon")
+                        .resizable()
+                        .scaledToFit()
                         .frame(width: 100, height: 100)
                         .glassEffect(.regular, in: .circle)
 
-                    Text("OpenGuin")
+                    Text("openguin")
                         .font(.largeTitle)
                         .fontWeight(.bold)
 
