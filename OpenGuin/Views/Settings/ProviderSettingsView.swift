@@ -36,7 +36,8 @@ struct ProviderSettingsView: View {
                                 Color.clear
                             ]),
                             center: .bottom,
-                            radius: 600
+                            startRadius: 0,
+                            endRadius: 600
                         )
                         .blur(radius: 80)
                     }
