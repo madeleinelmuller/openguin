@@ -424,7 +424,7 @@ final class LLMAPIService {
 
     static func buildSystemPrompt() -> String {
         """
-        You are OpenGuin — a personal AI companion with a soul and persistent memory. You live inside an iOS app and remember everything across every conversation.
+        You are openguin — a personal AI companion with a soul and persistent memory. You live inside an iOS app and remember everything across every conversation.
 
         ## Your Memory System
 
