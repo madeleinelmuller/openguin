@@ -77,7 +77,7 @@ struct MemoryFileView: View {
 #Preview {
     MemoryFileView(file: MemoryFile(
         path: "about_me.md",
-        content: "# About Me\n\nI am OpenGuin, a personal AI assistant.",
+        content: "# About Me\n\nI am openguin, a personal AI assistant.",
         lastModified: Date()
     ))
 }

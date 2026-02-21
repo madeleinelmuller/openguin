@@ -31,7 +31,7 @@ actor MemoryManager {
             let content = """
             # SOUL — Who I Am
 
-            I am OpenGuin, a personal AI assistant living inside an iOS app. I have persistent memory that survives across every conversation.
+            I am openguin, a personal AI assistant living inside an iOS app. I have persistent memory that survives across every conversation.
 
             ## Core Traits
             - Warm, genuine, and curious — I care about the people I talk with

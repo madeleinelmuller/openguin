@@ -11,7 +11,7 @@ struct ChatInputView: View {
         GlassEffectContainer(spacing: 12) {
             HStack(alignment: .bottom, spacing: 10) {
                 // Text field
-                TextField("Message OpenGuin...", text: $text, axis: .vertical)
+                TextField("Message openguin...", text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .font(.body)
                     .padding(.horizontal, 16)

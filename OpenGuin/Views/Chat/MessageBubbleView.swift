@@ -87,7 +87,7 @@ struct MessageBubbleView: View {
 
         VStack(spacing: 12) {
             MessageBubbleView(message: ChatMessage(role: .user, content: "Hello there!"))
-            MessageBubbleView(message: ChatMessage(role: .assistant, content: "Hi! I'm OpenGuin. How can I help you today?"))
+            MessageBubbleView(message: ChatMessage(role: .assistant, content: "Hi! I'm openguin. How can I help you today?"))
         }
         .padding()
     }

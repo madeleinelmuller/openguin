@@ -55,7 +55,7 @@ struct ProviderSettingsView: View {
                                 .glassEffect(.regular, in: .circle)
 
                             VStack(spacing: 4) {
-                                Text("OpenGuin Settings")
+                                Text("openguin Settings")
                                     .font(.title.weight(.bold))
                                     .foregroundStyle(.black)
 
@@ -634,7 +634,7 @@ struct ProviderSettingsView: View {
                 }
             }
         } message: {
-            Text("This will permanently delete all of OpenGuin's memories. This cannot be undone.")
+            Text("This will permanently delete all of openguin's memories. This cannot be undone.")
         }
     }
 }

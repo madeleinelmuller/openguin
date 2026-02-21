@@ -254,7 +254,7 @@ struct SettingsView: View {
                 }
             }
         } message: {
-            Text("This will permanently delete all of OpenGuin's memories. This cannot be undone.")
+            Text("This will permanently delete all of openguin's memories. This cannot be undone.")
         }
     }
 
@@ -269,7 +269,7 @@ struct SettingsView: View {
                     .frame(width: 72, height: 72)
                     .glassEffect(.regular, in: .circle)
 
-                Text("OpenGuin")
+                Text("openguin")
                     .font(.title2.weight(.bold))
 
                 Text("AI Assistant with Persistent Memory")
