@@ -250,10 +250,7 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) { }
             Button("Delete All", role: .destructive) {
                 Task {
-                    let files = await MemoryManager.shared.getAllMemoryFiles()
-                    for file in files {
-                        _ = await MemoryManager.shared.deleteFile(path: file.path)
-                    }
+                    await MemoryManager.shared.resetToDefaults()
                 }
             }
         } message: {

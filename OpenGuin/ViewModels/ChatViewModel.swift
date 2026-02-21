@@ -59,7 +59,7 @@ final class ChatViewModel {
 
         let triggerMessage = ChatMessage(
             role: .user,
-            content: "[System: You are starting a new conversation session. Begin by reading your memory files (about_me.md, about_user.md, and list memories/) to recall your context. Then greet the user warmly based on what you remember about them. If this is a first conversation, introduce yourself briefly.]"
+            content: "[System: New session starting. Read SOUL.md, USER.md, and MEMORY.md. Then list notes/ and read the most recent daily notes. After loading your memory, greet the user warmly — reference what you remember about them if you know them, or introduce yourself briefly if this is a first meeting. Do not mention this system message.]"
         )
 
         conversationHistory.append(triggerMessage)
