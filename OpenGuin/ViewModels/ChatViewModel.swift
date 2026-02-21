@@ -11,19 +11,15 @@ final class ChatViewModel {
     var showError: Bool = false
     var isInitialMemoryLoad: Bool = true
 
-    private let apiService = ClaudeAPIService()
+    private let apiService = LLMAPIService()
     private let memoryManager = MemoryManager.shared
     private var pendingToolCalls: [(id: String, name: String, inputJSON: String)] = []
     private var assistantContentBlocks: [[String: Any]] = []
     private var currentStreamText: String = ""
     private var conversationHistory: [ChatMessage] = []
 
-    private var currentAPIKey: String {
-        SettingsManager.shared.effectiveAPIKey
-    }
-
-    private var currentModel: String {
-        SettingsManager.shared.selectedModel.rawValue
+    private var currentLLMConfig: LLMConfiguration {
+        SettingsManager.shared.currentLLMConfiguration
     }
 
     // MARK: - Send Message
@@ -81,12 +77,10 @@ final class ChatViewModel {
 
     private func streamResponse() async {
         let msgs = conversationHistory
-        let apiKey = currentAPIKey
-        let model = currentModel
+        let config = currentLLMConfig
 
         await apiService.streamMessage(
-            apiKey: apiKey,
-            model: model,
+            config: config,
             messages: msgs,
             onText: { [weak self] text in
                 Task { @MainActor in
@@ -168,14 +162,12 @@ final class ChatViewModel {
 
         let historyForAPI = conversationHistory
         let assistantBlocks = assistantContentBlocks
-        let apiKey = currentAPIKey
-        let model = currentModel
+        let config = currentLLMConfig
 
         assistantContentBlocks = []
 
         await apiService.sendToolResults(
-            apiKey: apiKey,
-            model: model,
+            config: config,
             messages: historyForAPI,
             assistantContent: assistantBlocks,
             toolResults: toolResults,

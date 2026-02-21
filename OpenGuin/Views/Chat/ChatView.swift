@@ -85,9 +85,9 @@ struct ChatView: View {
 
             GlassEffectContainer {
                 VStack(spacing: 16) {
-                    Image(systemName: "bird")
+                    Image(systemName: "sparkles")
                         .font(.system(size: 56))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.black)
                         .frame(width: 100, height: 100)
                         .glassEffect(.regular, in: .circle)
 

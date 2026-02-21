@@ -14,7 +14,7 @@ struct ContentView: View {
             }
 
             Tab("Settings", systemImage: "gearshape.fill", value: .settings) {
-                SettingsView()
+                ProviderSettingsView()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToSettings)) { _ in

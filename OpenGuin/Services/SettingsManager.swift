@@ -6,38 +6,121 @@ import SwiftUI
 final class SettingsManager {
     static let shared = SettingsManager()
 
-    private let apiKeyKey = "anthropic_api_key"
-    private let modelKey = "selected_model"
+    // MARK: - Provider Settings Keys
+    private let providerKey = "llm_provider"
+    private let anthropicKeyKey = "anthropic_api_key"
+    private let openaiKeyKey = "openai_api_key"
+    private let customEndpointKey = "custom_endpoint"
+    private let customModelNameKey = "custom_model_name"
+
+    // MARK: - Model Selection Keys
+    private let anthropicModelKey = "anthropic_model"
+    private let openaiModelKey = "openai_model"
+
+    // MARK: - Other Settings Keys
     private let hapticKey = "haptic_feedback"
 
-    var apiKey: String {
+    // MARK: - Provider & API Keys
+    var selectedProvider: LLMProvider {
         didSet {
-            UserDefaults.standard.set(apiKey, forKey: apiKeyKey)
+            UserDefaults.standard.set(selectedProvider.rawValue, forKey: providerKey)
         }
     }
 
-    var selectedModel: ClaudeModel {
+    var anthropicAPIKey: String {
         didSet {
-            UserDefaults.standard.set(selectedModel.rawValue, forKey: modelKey)
+            UserDefaults.standard.set(anthropicAPIKey, forKey: anthropicKeyKey)
         }
     }
 
+    var openaiAPIKey: String {
+        didSet {
+            UserDefaults.standard.set(openaiAPIKey, forKey: openaiKeyKey)
+        }
+    }
+
+    var customEndpoint: String {
+        didSet {
+            UserDefaults.standard.set(customEndpoint, forKey: customEndpointKey)
+        }
+    }
+
+    var customModelName: String {
+        didSet {
+            UserDefaults.standard.set(customModelName, forKey: customModelNameKey)
+        }
+    }
+
+    // MARK: - Model Selection
+    var selectedAnthropicModel: AnthropicModel {
+        didSet {
+            UserDefaults.standard.set(selectedAnthropicModel.rawValue, forKey: anthropicModelKey)
+        }
+    }
+
+    var selectedOpenAIModel: OpenAIModel {
+        didSet {
+            UserDefaults.standard.set(selectedOpenAIModel.rawValue, forKey: openaiModelKey)
+        }
+    }
+
+    // MARK: - Other Settings
     var hapticFeedbackEnabled: Bool {
         didSet {
             UserDefaults.standard.set(hapticFeedbackEnabled, forKey: hapticKey)
         }
     }
 
-    var hasValidAPIKey: Bool {
-        !effectiveAPIKey.isEmpty
+    // MARK: - Computed Properties
+    var effectiveAPIKey: String {
+        switch selectedProvider {
+        case .anthropic:
+            return anthropicAPIKey.isEmpty ? Self.developmentAPIKey : anthropicAPIKey
+        case .openai:
+            return openaiAPIKey
+        case .openaiCompatible, .lmstudio:
+            return customEndpoint.isEmpty ? "" : customModelName
+        }
     }
 
-    /// Returns the API key to use: user-set key takes priority, then env fallback
-    var effectiveAPIKey: String {
-        if !apiKey.isEmpty {
-            return apiKey
+    var hasValidAPIKey: Bool {
+        switch selectedProvider {
+        case .anthropic:
+            return !effectiveAPIKey.isEmpty
+        case .openai:
+            return !openaiAPIKey.isEmpty
+        case .openaiCompatible, .lmstudio:
+            return !customEndpoint.isEmpty && !customModelName.isEmpty
         }
-        return Self.developmentAPIKey
+    }
+
+    var isUsingDevelopmentKey: Bool {
+        selectedProvider == .anthropic && anthropicAPIKey.isEmpty && !Self.developmentAPIKey.isEmpty
+    }
+
+    var currentLLMConfiguration: LLMConfiguration {
+        let apiKey: String
+        let modelId: String
+
+        switch selectedProvider {
+        case .anthropic:
+            apiKey = effectiveAPIKey
+            modelId = selectedAnthropicModel.rawValue
+        case .openai:
+            apiKey = openaiAPIKey
+            modelId = selectedOpenAIModel.rawValue
+        case .openaiCompatible, .lmstudio:
+            apiKey = customEndpoint
+            modelId = customModelName
+        }
+
+        return LLMConfiguration(
+            provider: selectedProvider,
+            apiKey: apiKey,
+            endpoint: customEndpoint.isEmpty ? nil : customEndpoint,
+            modelId: modelId,
+            customModelName: customModelName.isEmpty ? nil : customModelName
+        )
     }
 
     /// Development API key from environment (set in Xcode scheme)
@@ -45,38 +128,21 @@ final class SettingsManager {
         ProcessInfo.processInfo.environment["API_KEY"] ?? ""
     }()
 
-    var isUsingDevelopmentKey: Bool {
-        apiKey.isEmpty && !Self.developmentAPIKey.isEmpty
-    }
-
     private init() {
-        self.apiKey = UserDefaults.standard.string(forKey: apiKeyKey) ?? ""
-        let modelRaw = UserDefaults.standard.string(forKey: modelKey) ?? ClaudeModel.sonnet.rawValue
-        self.selectedModel = ClaudeModel(rawValue: modelRaw) ?? .sonnet
+        let providerRaw = UserDefaults.standard.string(forKey: providerKey) ?? LLMProvider.anthropic.rawValue
+        self.selectedProvider = LLMProvider(rawValue: providerRaw) ?? .anthropic
+
+        self.anthropicAPIKey = UserDefaults.standard.string(forKey: anthropicKeyKey) ?? ""
+        self.openaiAPIKey = UserDefaults.standard.string(forKey: openaiKeyKey) ?? ""
+        self.customEndpoint = UserDefaults.standard.string(forKey: customEndpointKey) ?? ""
+        self.customModelName = UserDefaults.standard.string(forKey: customModelNameKey) ?? ""
+
+        let anthropicModelRaw = UserDefaults.standard.string(forKey: anthropicModelKey) ?? AnthropicModel.sonnet.rawValue
+        self.selectedAnthropicModel = AnthropicModel(rawValue: anthropicModelRaw) ?? .sonnet
+
+        let openaiModelRaw = UserDefaults.standard.string(forKey: openaiModelKey) ?? OpenAIModel.gpt4turbo.rawValue
+        self.selectedOpenAIModel = OpenAIModel(rawValue: openaiModelRaw) ?? .gpt4turbo
+
         self.hapticFeedbackEnabled = UserDefaults.standard.object(forKey: hapticKey) as? Bool ?? true
-    }
-}
-
-enum ClaudeModel: String, CaseIterable, Identifiable, Sendable {
-    case haiku = "claude-haiku-4-5-20251001"
-    case sonnet = "claude-sonnet-4-6"
-    case opus = "claude-opus-4-6"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .haiku: return "Claude Haiku 4.5"
-        case .sonnet: return "Claude Sonnet 4.6"
-        case .opus: return "Claude Opus 4.6"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .haiku: return "Fast & efficient"
-        case .sonnet: return "Balanced performance"
-        case .opus: return "Most capable"
-        }
     }
 }
