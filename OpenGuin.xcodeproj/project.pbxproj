@@ -17,6 +17,7 @@
 		A100000000000000000090 /* Exceptions for "OpenGuin" folder in "OpenGuin" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Info.plist,
 			);
 			target = A100000000000000000050 /* OpenGuin */;
 		};
@@ -270,7 +271,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"OpenGuin/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenGuin/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenGuin;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
@@ -304,7 +304,6 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"OpenGuin/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OpenGuin/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenGuin;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";

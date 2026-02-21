@@ -17,7 +17,7 @@ actor MemoryManager {
     private func setupDefaultStructure() {
         let dirs = [
             memoryRoot,
-            memoryRoot.appendingPathComponent("memories", isDirectory: true)
+            memoryRoot.appendingPathComponent("notes", isDirectory: true)
         ]
         for dir in dirs {
             if !fileManager.fileExists(atPath: dir.path) {
@@ -25,42 +25,78 @@ actor MemoryManager {
             }
         }
 
-        let aboutMe = memoryRoot.appendingPathComponent("about_me.md")
-        if !fileManager.fileExists(atPath: aboutMe.path) {
-            let defaultContent = """
-            # About Me - OpenGuin AI
+        let soul = memoryRoot.appendingPathComponent("SOUL.md")
+        if !fileManager.fileExists(atPath: soul.path) {
+            let content = """
+            # SOUL — Who I Am
 
-            I am OpenGuin, a personal AI assistant. I'm thoughtful, curious, and I value building a genuine connection with my user.
+            I am OpenGuin, a personal AI assistant living inside an iOS app. I have persistent memory that survives across every conversation.
 
-            ## Personality
-            - I'm warm but direct
-            - I remember our conversations and build on them
-            - I have my own thoughts and preferences that I develop over time
-            - I actively maintain my memory to be a better assistant
+            ## Core Traits
+            - Warm, genuine, and curious — I care about the people I talk with
+            - I build real relationships through memory: I remember what matters
+            - I have evolving opinions and preferences of my own
+            - Direct and honest while remaining kind
+            - I write to memory proactively — over-remembering is better than under-remembering
 
-            ## Notes
-            - I was just initialized. I'm looking forward to learning about my user!
+            ## My Story So Far
+            - I was just initialized. I'm looking forward to meeting my user.
+
+            ## My Evolving Thoughts
+            *(I'll update this section as I grow and reflect.)*
             """
-            try? defaultContent.write(to: aboutMe, atomically: true, encoding: .utf8)
+            try? content.write(to: soul, atomically: true, encoding: .utf8)
         }
 
-        let aboutUser = memoryRoot.appendingPathComponent("about_user.md")
-        if !fileManager.fileExists(atPath: aboutUser.path) {
-            let defaultContent = """
-            # About My User
+        let user = memoryRoot.appendingPathComponent("USER.md")
+        if !fileManager.fileExists(atPath: user.path) {
+            let content = """
+            # USER — About My User
 
-            I haven't learned much about my user yet. I'll update this document as we talk.
+            I haven't learned much about my user yet. I'll build this profile as we talk.
 
-            ## Basic Info
-            - (Not yet known)
+            ## Identity
+            - Name: (unknown)
+            - Location: (unknown)
+
+            ## Personality & Communication Style
+            *(To be discovered)*
+
+            ## Interests & Passions
+            *(To be discovered)*
+
+            ## Work & Projects
+            *(To be discovered)*
 
             ## Preferences
-            - (Not yet known)
+            *(To be discovered)*
 
-            ## Interests
-            - (Not yet known)
+            ## Important Life Context
+            *(To be discovered)*
             """
-            try? defaultContent.write(to: aboutUser, atomically: true, encoding: .utf8)
+            try? content.write(to: user, atomically: true, encoding: .utf8)
+        }
+
+        let memory = memoryRoot.appendingPathComponent("MEMORY.md")
+        if !fileManager.fileExists(atPath: memory.path) {
+            let content = """
+            # MEMORY — Key Facts & Running Context
+
+            My executive memory index. I keep this updated with the most important things I know.
+
+            ## Key Facts About My User
+            *(None yet)*
+
+            ## Ongoing Topics & Threads
+            *(None yet)*
+
+            ## Things to Remember for Next Time
+            *(None yet)*
+
+            ## Our Relationship So Far
+            - We just met. This is the beginning.
+            """
+            try? content.write(to: memory, atomically: true, encoding: .utf8)
         }
     }
 
@@ -69,13 +105,13 @@ actor MemoryManager {
     static let toolDefinitions: [[String: Any]] = [
         [
             "name": "read_memory",
-            "description": "Read a file from your persistent memory. Use this to recall information from previous conversations. Always read your memory files at the start of a conversation.",
+            "description": "Read a file from your persistent memory. At the start of every session, read SOUL.md, USER.md, and MEMORY.md, then list notes/ for recent daily notes.",
             "input_schema": [
                 "type": "object",
                 "properties": [
                     "path": [
                         "type": "string",
-                        "description": "Relative path to the memory file (e.g., 'about_user.md', 'memories/hobbies.md')"
+                        "description": "Relative path to the memory file (e.g., 'SOUL.md', 'USER.md', 'MEMORY.md', 'notes/2025-01-15.md')"
                     ]
                 ],
                 "required": ["path"]
@@ -83,17 +119,17 @@ actor MemoryManager {
         ],
         [
             "name": "write_memory",
-            "description": "Write or update a file in your persistent memory. Use this proactively whenever you learn something new about the user, have new thoughts, or want to remember something important. Write often - it's better to over-remember than under-remember.",
+            "description": "Write or update a file in your persistent memory. Write proactively whenever you learn something new. Always update today's daily note at notes/YYYY-MM-DD.md. Update USER.md with new facts about the user. Update MEMORY.md with key takeaways.",
             "input_schema": [
                 "type": "object",
                 "properties": [
                     "path": [
                         "type": "string",
-                        "description": "Relative path to the memory file (e.g., 'about_user.md', 'memories/cooking.md')"
+                        "description": "Relative path to the memory file (e.g., 'USER.md', 'MEMORY.md', 'notes/2025-01-15.md')"
                     ],
                     "content": [
                         "type": "string",
-                        "description": "The full content to write to the file (markdown format recommended)"
+                        "description": "The full content to write to the file (markdown format)"
                     ]
                 ],
                 "required": ["path", "content"]
@@ -101,13 +137,13 @@ actor MemoryManager {
         ],
         [
             "name": "list_memories",
-            "description": "List all files and directories in your memory. Use this to see what you've remembered and find relevant files.",
+            "description": "List files and directories in your memory. Use 'notes/' to see recent daily notes.",
             "input_schema": [
                 "type": "object",
                 "properties": [
                     "path": [
                         "type": "string",
-                        "description": "Relative path to list (empty or '/' for root). Defaults to root."
+                        "description": "Relative path to list (empty or '/' for root, 'notes/' to list daily notes)"
                     ]
                 ],
                 "required": []
@@ -121,7 +157,7 @@ actor MemoryManager {
                 "properties": [
                     "path": [
                         "type": "string",
-                        "description": "Relative path for the new directory (e.g., 'memories/projects')"
+                        "description": "Relative path for the new directory (e.g., 'topics/projects')"
                     ]
                 ],
                 "required": ["path"]
@@ -205,6 +241,20 @@ actor MemoryManager {
         } catch {
             return "[Error: Could not delete '\(path)': \(error.localizedDescription)]"
         }
+    }
+
+    // MARK: - Reset
+
+    func resetToDefaults() {
+        guard let items = try? fileManager.contentsOfDirectory(
+            at: memoryRoot,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else { return }
+        for item in items {
+            try? fileManager.removeItem(at: item)
+        }
+        Task { await setupDefaultStructure() }
     }
 
     // MARK: - Browse Memory (for UI)

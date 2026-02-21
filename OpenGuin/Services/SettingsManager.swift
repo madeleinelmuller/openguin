@@ -59,22 +59,22 @@ final class SettingsManager {
 
 enum ClaudeModel: String, CaseIterable, Identifiable, Sendable {
     case haiku = "claude-haiku-4-5-20251001"
-    case sonnet = "claude-sonnet-4-5-20250514"
-    case opus = "claude-opus-4-20250514"
+    case sonnet = "claude-sonnet-4-6"
+    case opus = "claude-opus-4-6"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .haiku: return "Claude 4.5 Haiku"
-        case .sonnet: return "Claude 4.5 Sonnet"
-        case .opus: return "Claude 4 Opus"
+        case .haiku: return "Claude Haiku 4.5"
+        case .sonnet: return "Claude Sonnet 4.6"
+        case .opus: return "Claude Opus 4.6"
         }
     }
 
     var description: String {
         switch self {
-        case .haiku: return "Fast & lightweight"
+        case .haiku: return "Fast & efficient"
         case .sonnet: return "Balanced performance"
         case .opus: return "Most capable"
         }

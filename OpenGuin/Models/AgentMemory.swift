@@ -16,16 +16,20 @@ struct MemoryFile: Identifiable, Codable {
     }
 
     var icon: String {
-        if fileName == "about_me.md" { return "person.text.rectangle" }
-        if fileName == "about_user.md" { return "person.crop.circle" }
+        if fileName == "SOUL.md" { return "sparkles" }
+        if fileName == "USER.md" { return "person.crop.circle" }
+        if fileName == "MEMORY.md" { return "brain.head.profile" }
+        if path.hasPrefix("notes/") { return "calendar" }
         if fileName.hasSuffix(".md") { return "doc.text" }
         return "doc"
     }
 
     var color: Color {
-        if fileName == "about_me.md" { return .blue }
-        if fileName == "about_user.md" { return .green }
-        return .orange
+        if fileName == "SOUL.md" { return .purple }
+        if fileName == "USER.md" { return .green }
+        if fileName == "MEMORY.md" { return .blue }
+        if path.hasPrefix("notes/") { return .orange }
+        return .teal
     }
 }
 
