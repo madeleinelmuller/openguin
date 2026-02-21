@@ -17,7 +17,8 @@ actor MemoryManager {
     private func setupDefaultStructure() async {
         let dirs = [
             memoryRoot,
-            memoryRoot.appendingPathComponent("notes", isDirectory: true)
+            memoryRoot.appendingPathComponent("notes", isDirectory: true),
+            memoryRoot.appendingPathComponent("workspace", isDirectory: true)
         ]
         for dir in dirs {
             if !fileManager.fileExists(atPath: dir.path) {
