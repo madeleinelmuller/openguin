@@ -1,6 +1,7 @@
 import Foundation
 
-final class ClaudeAPIService: Sendable {
+@MainActor
+final class ClaudeAPIService {
     private let baseURL = "https://api.anthropic.com/v1/messages"
     private let apiVersion = "2023-06-01"
 
@@ -16,7 +17,7 @@ final class ClaudeAPIService: Sendable {
         model: String,
         messages: [ChatMessage],
         onText: @Sendable @escaping (String) -> Void,
-        onToolUse: @Sendable @escaping (String, String, [String: Any]) -> Void,
+        onToolUse: @Sendable @escaping (String, String, String) -> Void,
         onComplete: @Sendable @escaping (String?) -> Void,
         onError: @Sendable @escaping (Error) -> Void
     ) async {
@@ -37,13 +38,15 @@ final class ClaudeAPIService: Sendable {
             }
         }
 
+        let tools = MemoryManager.toolDefinitions
+
         let body: [String: Any] = [
             "model": model,
             "max_tokens": 4096,
             "system": Self.buildSystemPrompt(),
             "stream": true,
             "messages": apiMessages,
-            "tools": MemoryManager.toolDefinitions
+            "tools": tools
         ]
 
         await performStreamRequest(apiKey: apiKey, body: body, onText: onText, onToolUse: onToolUse, onComplete: onComplete, onError: onError)
@@ -58,7 +61,7 @@ final class ClaudeAPIService: Sendable {
         assistantContent: [[String: Any]],
         toolResults: [(id: String, content: String)],
         onText: @Sendable @escaping (String) -> Void,
-        onToolUse: @Sendable @escaping (String, String, [String: Any]) -> Void,
+        onToolUse: @Sendable @escaping (String, String, String) -> Void,
         onComplete: @Sendable @escaping (String?) -> Void,
         onError: @Sendable @escaping (Error) -> Void
     ) async {
@@ -89,13 +92,15 @@ final class ClaudeAPIService: Sendable {
         }
         apiMessages.append(["role": "user", "content": toolResultBlocks])
 
+        let tools = MemoryManager.toolDefinitions
+
         let body: [String: Any] = [
             "model": model,
             "max_tokens": 4096,
             "system": Self.buildSystemPrompt(),
             "stream": true,
             "messages": apiMessages,
-            "tools": MemoryManager.toolDefinitions
+            "tools": tools
         ]
 
         await performStreamRequest(apiKey: apiKey, body: body, onText: onText, onToolUse: onToolUse, onComplete: onComplete, onError: onError)
@@ -107,7 +112,7 @@ final class ClaudeAPIService: Sendable {
         apiKey: String,
         body: [String: Any],
         onText: @Sendable @escaping (String) -> Void,
-        onToolUse: @Sendable @escaping (String, String, [String: Any]) -> Void,
+        onToolUse: @Sendable @escaping (String, String, String) -> Void,
         onComplete: @Sendable @escaping (String?) -> Void,
         onError: @Sendable @escaping (Error) -> Void
     ) async {
@@ -177,14 +182,8 @@ final class ClaudeAPIService: Sendable {
 
                 case "content_block_stop":
                     if !currentToolName.isEmpty {
-                        let inputDict: [String: Any]
-                        if let data = currentToolInput.data(using: .utf8),
-                           let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                            inputDict = parsed
-                        } else {
-                            inputDict = [:]
-                        }
-                        onToolUse(currentToolId, currentToolName, inputDict)
+                        let inputJSON = currentToolInput.isEmpty ? "{}" : currentToolInput
+                        onToolUse(currentToolId, currentToolName, inputJSON)
                         currentToolName = ""
                         currentToolId = ""
                         currentToolInput = ""

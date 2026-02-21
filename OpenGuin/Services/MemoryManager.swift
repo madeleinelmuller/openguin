@@ -14,7 +14,7 @@ actor MemoryManager {
 
     // MARK: - Setup
 
-    private func setupDefaultStructure() {
+    private func setupDefaultStructure() async {
         let dirs = [
             memoryRoot,
             memoryRoot.appendingPathComponent("notes", isDirectory: true)
@@ -102,7 +102,7 @@ actor MemoryManager {
 
     // MARK: - Tool Definitions
 
-    static let toolDefinitions: [[String: Any]] = [
+    nonisolated(unsafe) static let toolDefinitions: [[String: Any]] = [
         [
             "name": "read_memory",
             "description": "Read a file from your persistent memory. At the start of every session, read SOUL.md, USER.md, and MEMORY.md, then list notes/ for recent daily notes.",
@@ -316,7 +316,15 @@ actor MemoryManager {
 
     // MARK: - Tool Execution
 
-    func executeTool(name: String, input: [String: Any]) async -> String {
+    func executeTool(name: String, inputJSON: String) async -> String {
+        let input: [String: Any]
+        if let data = inputJSON.data(using: .utf8),
+           let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            input = parsed
+        } else {
+            input = [:]
+        }
+
         switch name {
         case "read_memory":
             guard let path = input["path"] as? String else { return "[Error: Missing 'path' parameter]" }

@@ -6,9 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
 		A100000000000000000001 /* OpenGuin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenGuin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -45,7 +42,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A100000000000000000002 /* Root */ = {
+		A100000000000000000002 = {
 			isa = PBXGroup;
 			children = (
 				A100000000000000000003 /* OpenGuin */,
@@ -108,7 +105,7 @@
 				en,
 				Base,
 			);
-			mainGroup = A100000000000000000002 /* Root */;
+			mainGroup = A100000000000000000002;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = A100000000000000000040 /* Products */;
@@ -270,6 +267,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"OpenGuin/Preview Content\"";
+				DEVELOPMENT_TEAM = YT79L5W85K;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = OpenGuin/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenGuin;
@@ -303,6 +301,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"OpenGuin/Preview Content\"";
+				DEVELOPMENT_TEAM = YT79L5W85K;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = OpenGuin/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OpenGuin;
@@ -350,7 +349,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A100000000000000000060 /* Project object */;
 }

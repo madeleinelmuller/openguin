@@ -13,7 +13,7 @@ final class ChatViewModel {
 
     private let apiService = ClaudeAPIService()
     private let memoryManager = MemoryManager.shared
-    private var pendingToolCalls: [(id: String, name: String, input: [String: Any])] = []
+    private var pendingToolCalls: [(id: String, name: String, inputJSON: String)] = []
     private var assistantContentBlocks: [[String: Any]] = []
     private var currentStreamText: String = ""
     private var conversationHistory: [ChatMessage] = []
@@ -98,10 +98,10 @@ final class ChatViewModel {
                     }
                 }
             },
-            onToolUse: { [weak self] id, name, input in
+            onToolUse: { [weak self] id, name, inputJSON in
                 Task { @MainActor in
                     guard let self else { return }
-                    self.pendingToolCalls.append((id: id, name: name, input: input))
+                    self.pendingToolCalls.append((id: id, name: name, inputJSON: inputJSON))
                 }
             },
             onComplete: { [weak self] stopReason in
@@ -143,14 +143,15 @@ final class ChatViewModel {
         var toolResults: [(id: String, content: String)] = []
 
         for tool in pendingToolCalls {
+            let input = Self.parseToolInput(from: tool.inputJSON)
             assistantContentBlocks.append([
                 "type": "tool_use",
                 "id": tool.id,
                 "name": tool.name,
-                "input": tool.input
+                "input": input
             ])
 
-            let result = await memoryManager.executeTool(name: tool.name, input: tool.input)
+            let result = await memoryManager.executeTool(name: tool.name, inputJSON: tool.inputJSON)
             toolResults.append((id: tool.id, content: result))
         }
 
@@ -188,10 +189,10 @@ final class ChatViewModel {
                     }
                 }
             },
-            onToolUse: { [weak self] id, name, input in
+            onToolUse: { [weak self] id, name, inputJSON in
                 Task { @MainActor in
                     guard let self else { return }
-                    self.pendingToolCalls.append((id: id, name: name, input: input))
+                    self.pendingToolCalls.append((id: id, name: name, inputJSON: inputJSON))
                 }
             },
             onComplete: { [weak self] stopReason in
@@ -269,5 +270,13 @@ final class ChatViewModel {
         Task {
             await streamResponse()
         }
+    }
+
+    private static func parseToolInput(from json: String) -> [String: Any] {
+        guard let data = json.data(using: .utf8),
+              let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return [:]
+        }
+        return parsed
     }
 }
