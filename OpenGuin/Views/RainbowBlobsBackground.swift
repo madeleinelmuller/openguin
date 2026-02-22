@@ -35,13 +35,13 @@ private struct RainbowBlobsLayer: View {
 
     // Seven rainbow blobs — each sits near the bottom with its own drift speed/phase
     private let blobs: [BlobSpec] = [
-        BlobSpec(color: .red,    width: 280, height: 200, xFraction: 0.05, yFraction: 0.84, xAmplitude: 40, yAmplitude: 22, speed: 0.47, phase: 0.00),
-        BlobSpec(color: .orange, width: 250, height: 180, xFraction: 0.23, yFraction: 0.90, xAmplitude: 32, yAmplitude: 28, speed: 0.60, phase: 1.05),
-        BlobSpec(color: .yellow, width: 230, height: 170, xFraction: 0.41, yFraction: 0.86, xAmplitude: 36, yAmplitude: 18, speed: 0.52, phase: 2.10),
-        BlobSpec(color: .green,  width: 260, height: 190, xFraction: 0.58, yFraction: 0.92, xAmplitude: 28, yAmplitude: 25, speed: 0.67, phase: 3.15),
-        BlobSpec(color: .cyan,   width: 240, height: 175, xFraction: 0.74, yFraction: 0.87, xAmplitude: 34, yAmplitude: 20, speed: 0.55, phase: 4.20),
-        BlobSpec(color: .blue,   width: 255, height: 185, xFraction: 0.90, yFraction: 0.94, xAmplitude: 26, yAmplitude: 30, speed: 0.43, phase: 5.25),
-        BlobSpec(color: .purple, width: 290, height: 210, xFraction: 0.50, yFraction: 0.98, xAmplitude: 45, yAmplitude: 16, speed: 0.71, phase: 0.78),
+        BlobSpec(color: .red,    width: 360, height: 360, xFraction: 0.05, yFraction: 0.74, xAmplitude: 48, yAmplitude: 36, speed: 0.47, phase: 0.00),
+        BlobSpec(color: .orange, width: 330, height: 320, xFraction: 0.23, yFraction: 0.79, xAmplitude: 40, yAmplitude: 42, speed: 0.60, phase: 1.05),
+        BlobSpec(color: .yellow, width: 320, height: 300, xFraction: 0.41, yFraction: 0.75, xAmplitude: 44, yAmplitude: 32, speed: 0.52, phase: 2.10),
+        BlobSpec(color: .green,  width: 350, height: 335, xFraction: 0.58, yFraction: 0.81, xAmplitude: 38, yAmplitude: 38, speed: 0.67, phase: 3.15),
+        BlobSpec(color: .cyan,   width: 325, height: 300, xFraction: 0.74, yFraction: 0.76, xAmplitude: 42, yAmplitude: 34, speed: 0.55, phase: 4.20),
+        BlobSpec(color: .blue,   width: 345, height: 320, xFraction: 0.90, yFraction: 0.83, xAmplitude: 34, yAmplitude: 44, speed: 0.43, phase: 5.25),
+        BlobSpec(color: .purple, width: 390, height: 380, xFraction: 0.50, yFraction: 0.88, xAmplitude: 54, yAmplitude: 28, speed: 0.71, phase: 0.78),
     ]
 
     var body: some View {
@@ -57,13 +57,20 @@ private struct RainbowBlobsLayer: View {
                             + cos(time * blob.speed * 0.73 + blob.phase) * Double(blob.yAmplitude)
 
                         Ellipse()
-                            .fill(blob.color.opacity(0.90))
+                            .fill(blob.color.opacity(0.95))
                             .frame(width: blob.width, height: blob.height)
                             .position(x: x, y: y)
                     }
                 }
                 // Heavy gaussian blur turns hard-edged blobs into soft glowing light
-                .blur(radius: 72)
+                .blur(radius: 95)
+
+                LinearGradient(
+                    colors: [.clear, .white.opacity(0.05), .clear],
+                    startPoint: .bottom,
+                    endPoint: .top
+                )
+                .blendMode(.screen)
             }
         }
     }

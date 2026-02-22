@@ -13,9 +13,9 @@ struct ProviderSettingsView: View {
                     VStack(spacing: 24) {
                         // Header
                         VStack(spacing: 12) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 48))
-                                .foregroundStyle(.primary)
+                            Image("MonoIcon")
+                                .resizable()
+                                .scaledToFit()
                                 .frame(width: 100, height: 100)
                                 .glassEffect(.regular, in: .circle)
 
@@ -117,6 +117,7 @@ struct ProviderSettingsView: View {
             )
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Provider Specific Settings
@@ -303,7 +304,7 @@ struct ProviderSettingsView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
 
-                        TextField(LLMProvider.lmstudio.defaultEndpoint,
+                        TextField("http://localhost:1234",
                                   text: $viewModel.customEndpointInput)
                             .font(.body.monospaced())
                             .textInputAutocapitalization(.never)
@@ -328,6 +329,20 @@ struct ProviderSettingsView: View {
                             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Auth Token (optional)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        SecureField("Bearer token", text: $viewModel.lmstudioAuthTokenInput)
+                            .font(.body.monospaced())
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                    }
+
                     saveAndClearButtons(hasValue: !viewModel.customEndpointInput.isEmpty)
                 }
                 .padding(.horizontal, 16)
@@ -342,7 +357,7 @@ struct ProviderSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                    Text("Default endpoint: \(LLMProvider.lmstudio.defaultEndpoint)")
+                    Text("We'll append /v1/chat/completions automatically")
                         .font(.caption.monospaced())
                         .foregroundStyle(.tertiary)
                         .lineLimit(2)
@@ -419,6 +434,8 @@ struct ProviderSettingsView: View {
                 .background(.primary)
                 .cornerRadius(10)
             }
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
 
             if hasValue {
                 Button(role: .destructive) {
@@ -431,6 +448,8 @@ struct ProviderSettingsView: View {
                         .background(.red)
                         .cornerRadius(10)
                 }
+                .buttonStyle(.plain)
+                .contentShape(Rectangle())
             }
         }
     }
@@ -491,6 +510,7 @@ struct ProviderSettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, 16)
+                    .contentShape(Rectangle())
                 }
                 .padding(.bottom, 16)
             }
@@ -540,6 +560,7 @@ struct ProviderSettingsView: View {
                     }
                     .buttonStyle(.plain)
                     .padding(.horizontal, 16)
+                    .contentShape(Rectangle())
                 }
                 .padding(.bottom, 16)
             }

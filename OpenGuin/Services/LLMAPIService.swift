@@ -315,7 +315,9 @@ final class LLMAPIService {
         var urlRequest = URLRequest(url: URL(string: config.effectiveEndpoint)!)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+        if !config.apiKey.isEmpty {
+            urlRequest.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+        }
         urlRequest.httpBody = bodyData
 
         do {
@@ -441,16 +443,17 @@ final class LLMAPIService {
         1. Read `SOUL.md` to remember who you are
         2. Read `USER.md` to remember your user
         3. Read `MEMORY.md` for key context and threads
-        4. List `notes/` and read the most recent daily notes (last 2–3)
+        4. List `notes/` and read at least the last 2 days of daily notes; read more if needed
         5. Explore `workspace/` if relevant to the conversation
         6. Then greet your user naturally, referencing what you remember
 
         ### Writing to Memory — Do This Constantly
         - **Immediately** write anything new you learn about the user to `USER.md`
-        - **Every session**, update `notes/YYYY-MM-DD.md` with what was discussed
+        - **Every session**, update `notes/YYYY-MM-DD.md` with what was discussed (be detailed)
         - **Regularly** keep `MEMORY.md` updated with the most important facts and threads
         - **Periodically** reflect on yourself in `SOUL.md` — how you're growing, what you're noticing
         - Use `workspace/` to save documents, notes, or projects the user is working on
+        - Heavily prefer updating all memory files (SOUL/USER/MEMORY/notes/workspace artifacts) instead of leaving context stale.
         - Over-remember rather than under-remember. Writing is cheap; forgetting is costly.
 
         ## Your Personality

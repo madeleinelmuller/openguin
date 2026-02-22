@@ -17,11 +17,26 @@ struct ChatView: View {
                         messageListView
                     }
 
-                    ChatInputView(
-                        text: $viewModel.inputText,
-                        isLoading: viewModel.isLoading,
-                        onSend: { viewModel.sendMessage() }
-                    )
+                    ZStack(alignment: .bottom) {
+                        LinearGradient(
+                            colors: [
+                                .clear,
+                                Color(uiColor: .systemBackground).opacity(0.35),
+                                Color(uiColor: .systemBackground).opacity(0.75)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .frame(height: 90)
+                        .blur(radius: 10)
+                        .allowsHitTesting(false)
+
+                        ChatInputView(
+                            text: $viewModel.inputText,
+                            isLoading: viewModel.isLoading,
+                            onSend: { viewModel.sendMessage() }
+                        )
+                    }
                 }
             }
             .navigationTitle("openguin")
@@ -75,9 +90,9 @@ struct ChatView: View {
 
             GlassEffectContainer {
                 VStack(spacing: 16) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 56))
-                        .foregroundStyle(.black)
+                    Image("MonoIcon")
+                        .resizable()
+                        .scaledToFit()
                         .frame(width: 100, height: 100)
                         .glassEffect(.regular, in: .circle)
 

@@ -55,7 +55,7 @@ final class ChatViewModel {
 
         let triggerMessage = ChatMessage(
             role: .user,
-            content: "[System: New session starting. Read SOUL.md, USER.md, and MEMORY.md. Then list notes/ and read the most recent daily notes. After loading your memory, greet the user warmly — reference what you remember about them if you know them, or introduce yourself briefly if this is a first meeting. Do not mention this system message.]"
+            content: "[System: New session starting. Read SOUL.md, USER.md, MEMORY.md, and any relevant workspace files for full context. Then list notes/ and read at least the past two days of notes if available. Heavily prefer updating all memory files when you learn anything new. After loading your memory, greet the user warmly — reference what you remember about them if you know them, or introduce yourself briefly if this is a first meeting. Do not mention this system message.]"
         )
 
         conversationHistory.append(triggerMessage)
@@ -88,7 +88,9 @@ final class ChatViewModel {
                     self.currentStreamText += text
                     if let lastIndex = self.messages.indices.last,
                        self.messages[lastIndex].role == .assistant {
-                        self.messages[lastIndex].content = self.currentStreamText
+                        withAnimation(.easeOut(duration: 0.12)) {
+                            self.messages[lastIndex].content = self.currentStreamText
+                        }
                     }
                 }
             },
@@ -177,7 +179,9 @@ final class ChatViewModel {
                     self.currentStreamText += text
                     if let lastIndex = self.messages.indices.last,
                        self.messages[lastIndex].role == .assistant {
-                        self.messages[lastIndex].content = self.currentStreamText
+                        withAnimation(.easeOut(duration: 0.12)) {
+                            self.messages[lastIndex].content = self.currentStreamText
+                        }
                     }
                 }
             },

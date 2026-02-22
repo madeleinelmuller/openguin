@@ -9,6 +9,7 @@ final class SettingsViewModel {
     var openaiKeyInput: String = ""
     var customEndpointInput: String = ""
     var customModelNameInput: String = ""
+    var lmstudioAuthTokenInput: String = ""
 
     // MARK: - UI State
     var isAnthropicKeyVisible: Bool = false
@@ -45,6 +46,11 @@ final class SettingsViewModel {
     var customModelName: String {
         get { settings.customModelName }
         set { settings.customModelName = newValue }
+    }
+
+    var lmstudioAuthToken: String {
+        get { settings.lmstudioAuthToken }
+        set { settings.lmstudioAuthToken = newValue }
     }
 
     // MARK: - Other Settings
@@ -84,10 +90,11 @@ final class SettingsViewModel {
         anthropicKeyInput = settings.anthropicAPIKey
         openaiKeyInput = settings.openaiAPIKey
         customModelNameInput = settings.customModelName
+        lmstudioAuthTokenInput = settings.lmstudioAuthToken
 
         // For LMStudio: pre-populate the endpoint field with the default if none saved
         if settings.selectedProvider == .lmstudio && settings.customEndpoint.isEmpty {
-            customEndpointInput = LLMProvider.lmstudio.defaultEndpoint
+            customEndpointInput = "http://localhost:1234"
         } else {
             customEndpointInput = settings.customEndpoint
         }
@@ -104,8 +111,12 @@ final class SettingsViewModel {
         case .openaiCompatible, .lmstudio:
             let endpointTrimmed = customEndpointInput.trimmingCharacters(in: .whitespacesAndNewlines)
             let modelTrimmed = customModelNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            let tokenTrimmed = lmstudioAuthTokenInput.trimmingCharacters(in: .whitespacesAndNewlines)
             settings.customEndpoint = endpointTrimmed
             settings.customModelName = modelTrimmed
+            if selectedProvider == .lmstudio {
+                settings.lmstudioAuthToken = tokenTrimmed
+            }
         }
 
         showAPIKeySaved = true
@@ -126,8 +137,10 @@ final class SettingsViewModel {
         case .openaiCompatible, .lmstudio:
             settings.customEndpoint = ""
             settings.customModelName = ""
+            settings.lmstudioAuthToken = ""
             customEndpointInput = ""
             customModelNameInput = ""
+            lmstudioAuthTokenInput = ""
         }
     }
 

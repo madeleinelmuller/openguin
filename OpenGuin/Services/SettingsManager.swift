@@ -12,6 +12,7 @@ final class SettingsManager {
     private let openaiKeyKey = "openai_api_key"
     private let customEndpointKey = "custom_endpoint"
     private let customModelNameKey = "custom_model_name"
+    private let lmstudioAuthTokenKey = "lmstudio_auth_token"
 
     // MARK: - Model Selection Keys
     private let anthropicModelKey = "anthropic_model"
@@ -51,6 +52,12 @@ final class SettingsManager {
         }
     }
 
+    var lmstudioAuthToken: String {
+        didSet {
+            UserDefaults.standard.set(lmstudioAuthToken, forKey: lmstudioAuthTokenKey)
+        }
+    }
+
     // MARK: - Model Selection
     var selectedAnthropicModel: AnthropicModel {
         didSet {
@@ -81,7 +88,7 @@ final class SettingsManager {
         case .openaiCompatible:
             return customEndpoint.isEmpty ? "" : customModelName
         case .lmstudio:
-            return "lmstudio" // LMStudio doesn't require authentication
+            return lmstudioAuthToken
         }
     }
 
@@ -117,17 +124,39 @@ final class SettingsManager {
             apiKey = customEndpoint // used as a non-empty sentinel for the guard check
             modelId = customModelName
         case .lmstudio:
-            apiKey = "lmstudio" // LMStudio doesn't need real auth; any non-empty value passes guard
+            apiKey = lmstudioAuthToken
             modelId = customModelName.isEmpty ? "local-model" : customModelName
         }
 
         return LLMConfiguration(
             provider: selectedProvider,
             apiKey: apiKey,
-            endpoint: customEndpoint.isEmpty ? nil : customEndpoint,
+            endpoint: normalizedEndpoint,
             modelId: modelId,
             customModelName: customModelName.isEmpty ? nil : customModelName
         )
+    }
+
+    private var normalizedEndpoint: String? {
+        let trimmed = customEndpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        if selectedProvider == .lmstudio {
+            return Self.normalizeLMStudioEndpoint(trimmed)
+        }
+
+        return trimmed
+    }
+
+    private static func normalizeLMStudioEndpoint(_ endpoint: String) -> String {
+        let cleaned = endpoint.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        if cleaned.lowercased().hasSuffix("/v1/chat/completions") {
+            return cleaned
+        }
+        if cleaned.lowercased().hasSuffix("/v1") {
+            return "\(cleaned)/chat/completions"
+        }
+        return "\(cleaned)/v1/chat/completions"
     }
 
     /// Development API key from environment (set in Xcode scheme)
@@ -143,6 +172,7 @@ final class SettingsManager {
         self.openaiAPIKey = UserDefaults.standard.string(forKey: openaiKeyKey) ?? ""
         self.customEndpoint = UserDefaults.standard.string(forKey: customEndpointKey) ?? ""
         self.customModelName = UserDefaults.standard.string(forKey: customModelNameKey) ?? ""
+        self.lmstudioAuthToken = UserDefaults.standard.string(forKey: lmstudioAuthTokenKey) ?? ""
 
         let anthropicModelRaw = UserDefaults.standard.string(forKey: anthropicModelKey) ?? AnthropicModel.sonnet.rawValue
         self.selectedAnthropicModel = AnthropicModel(rawValue: anthropicModelRaw) ?? .sonnet

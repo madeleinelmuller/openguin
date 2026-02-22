@@ -37,7 +37,7 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
         case .anthropic: return "https://api.anthropic.com/v1/messages"
         case .openai: return "https://api.openai.com/v1/chat/completions"
         case .openaiCompatible: return "http://localhost:8000/v1/chat/completions"
-        case .lmstudio: return "http://localhost:1234/v1/chat/completions"
+        case .lmstudio: return "http://localhost:1234"
         }
     }
 
@@ -60,17 +60,17 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
 // MARK: - Model Types
 
 enum AnthropicModel: String, CaseIterable, Identifiable, Sendable {
-    case haiku = "claude-3-5-haiku-20241022"
-    case sonnet = "claude-3-5-sonnet-20241022"
-    case opus = "claude-3-opus-20250219"
+    case haiku = "claude-haiku-4-5"
+    case sonnet = "claude-sonnet-4-6"
+    case opus = "claude-opus-4-6"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .haiku: return "Claude 3.5 Haiku"
-        case .sonnet: return "Claude 3.5 Sonnet"
-        case .opus: return "Claude 3 Opus"
+        case .haiku: return "Claude Haiku 4.5"
+        case .sonnet: return "Claude Sonnet 4.6"
+        case .opus: return "Claude Opus 4.6"
         }
     }
 
