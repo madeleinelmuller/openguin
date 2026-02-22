@@ -78,8 +78,10 @@ final class SettingsManager {
             return anthropicAPIKey.isEmpty ? Self.developmentAPIKey : anthropicAPIKey
         case .openai:
             return openaiAPIKey
-        case .openaiCompatible, .lmstudio:
+        case .openaiCompatible:
             return customEndpoint.isEmpty ? "" : customModelName
+        case .lmstudio:
+            return "lmstudio" // LMStudio doesn't require authentication
         }
     }
 
@@ -89,8 +91,10 @@ final class SettingsManager {
             return !effectiveAPIKey.isEmpty
         case .openai:
             return !openaiAPIKey.isEmpty
-        case .openaiCompatible, .lmstudio:
+        case .openaiCompatible:
             return !customEndpoint.isEmpty && !customModelName.isEmpty
+        case .lmstudio:
+            return true // Always valid — falls back to default localhost:1234 endpoint
         }
     }
 
@@ -109,9 +113,12 @@ final class SettingsManager {
         case .openai:
             apiKey = openaiAPIKey
             modelId = selectedOpenAIModel.rawValue
-        case .openaiCompatible, .lmstudio:
-            apiKey = customEndpoint
+        case .openaiCompatible:
+            apiKey = customEndpoint // used as a non-empty sentinel for the guard check
             modelId = customModelName
+        case .lmstudio:
+            apiKey = "lmstudio" // LMStudio doesn't need real auth; any non-empty value passes guard
+            modelId = customModelName.isEmpty ? "local-model" : customModelName
         }
 
         return LLMConfiguration(

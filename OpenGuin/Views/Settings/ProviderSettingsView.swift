@@ -6,62 +6,26 @@ struct ProviderSettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Modern background with rainbow gradient from bottom
-                VStack(spacing: 0) {
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.white.opacity(0.95),
-                            Color.gray.opacity(0.05)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .ignoresSafeArea()
-
-                    Spacer()
-                }
-
-                // Rainbow blur gradient radiating from bottom
-                VStack(spacing: 0) {
-                    Spacer()
-                    ZStack {
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                Color.red.opacity(0.15),
-                                Color.orange.opacity(0.12),
-                                Color.yellow.opacity(0.10),
-                                Color.green.opacity(0.08),
-                                Color.blue.opacity(0.06),
-                                Color.purple.opacity(0.04),
-                                Color.clear
-                            ]),
-                            center: .bottom,
-                            startRadius: 0,
-                            endRadius: 600
-                        )
-                        .blur(radius: 80)
-                    }
-                    .ignoresSafeArea()
-                }
+                // Animated rainbow blob glow from the bottom
+                RainbowBlobsBackground()
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Header with icon
+                        // Header
                         VStack(spacing: 12) {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 48))
-                                .foregroundStyle(.black)
+                                .foregroundStyle(.primary)
                                 .frame(width: 100, height: 100)
                                 .glassEffect(.regular, in: .circle)
 
                             VStack(spacing: 4) {
                                 Text("openguin Settings")
                                     .font(.title.weight(.bold))
-                                    .foregroundStyle(.black)
 
                                 Text("Configure your AI assistant")
                                     .font(.subheadline)
-                                    .foregroundStyle(.gray)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -92,6 +56,9 @@ struct ProviderSettingsView: View {
             .onAppear {
                 viewModel.loadCurrentSettings()
             }
+            .onChange(of: viewModel.selectedProvider) {
+                viewModel.loadCurrentSettings()
+            }
         }
     }
 
@@ -102,7 +69,6 @@ struct ProviderSettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Label("AI Provider", systemImage: "network")
                     .font(.headline)
-                    .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -128,17 +94,16 @@ struct ProviderSettingsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(provider.displayName)
                         .font(.body.weight(.semibold))
-                        .foregroundStyle(.black)
                     Text(provider.description)
                         .font(.caption)
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
                 if viewModel.selectedProvider == provider {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.black)
+                        .foregroundStyle(.primary)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -164,9 +129,10 @@ struct ProviderSettingsView: View {
         case .openai:
             openaiSettingsView
         case .openaiCompatible:
-            customEndpointSettingsView(title: "OpenAI-Compatible Endpoint")
+            customEndpointSettingsView(title: "OpenAI-Compatible Endpoint",
+                                       placeholder: "http://localhost:8000/v1/chat/completions")
         case .lmstudio:
-            customEndpointSettingsView(title: "LMStudio Settings")
+            lmstudioSettingsView
         }
     }
 
@@ -176,7 +142,6 @@ struct ProviderSettingsView: View {
                 HStack {
                     Label("Anthropic API Key", systemImage: "key.fill")
                         .font(.headline)
-                        .foregroundStyle(.black)
 
                     Spacer()
 
@@ -227,48 +192,21 @@ struct ProviderSettingsView: View {
                             viewModel.isAnthropicKeyVisible.toggle()
                         } label: {
                             Image(systemName: viewModel.isAnthropicKeyVisible ? "eye.slash" : "eye")
-                                .foregroundStyle(.gray)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
 
-                    HStack(spacing: 10) {
-                        Button {
-                            viewModel.saveCurrentProvider()
-                        } label: {
-                            HStack {
-                                Image(systemName: viewModel.showAPIKeySaved ? "checkmark" : "square.and.arrow.down")
-                                Text(viewModel.showAPIKeySaved ? "Saved" : "Save")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .foregroundStyle(.white)
-                            .background(.black)
-                            .cornerRadius(10)
-                        }
-
-                        if !viewModel.anthropicKeyInput.isEmpty {
-                            Button(role: .destructive) {
-                                viewModel.clearCurrentProvider()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .foregroundStyle(.white)
-                                    .background(.red)
-                                    .cornerRadius(10)
-                            }
-                        }
-                    }
+                    saveAndClearButtons(hasValue: !viewModel.anthropicKeyInput.isEmpty)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
 
                 Text("Get your key at console.anthropic.com")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
             }
@@ -282,7 +220,6 @@ struct ProviderSettingsView: View {
                 HStack {
                     Label("OpenAI API Key", systemImage: "key.fill")
                         .font(.headline)
-                        .foregroundStyle(.black)
 
                     Spacer()
 
@@ -327,48 +264,21 @@ struct ProviderSettingsView: View {
                             viewModel.isOpenAIKeyVisible.toggle()
                         } label: {
                             Image(systemName: viewModel.isOpenAIKeyVisible ? "eye.slash" : "eye")
-                                .foregroundStyle(.gray)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
 
-                    HStack(spacing: 10) {
-                        Button {
-                            viewModel.saveCurrentProvider()
-                        } label: {
-                            HStack {
-                                Image(systemName: viewModel.showAPIKeySaved ? "checkmark" : "square.and.arrow.down")
-                                Text(viewModel.showAPIKeySaved ? "Saved" : "Save")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .foregroundStyle(.white)
-                            .background(.black)
-                            .cornerRadius(10)
-                        }
-
-                        if !viewModel.openaiKeyInput.isEmpty {
-                            Button(role: .destructive) {
-                                viewModel.clearCurrentProvider()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .foregroundStyle(.white)
-                                    .background(.red)
-                                    .cornerRadius(10)
-                            }
-                        }
-                    }
+                    saveAndClearButtons(hasValue: !viewModel.openaiKeyInput.isEmpty)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
 
                 Text("Get your key at platform.openai.com")
                     .font(.caption)
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
             }
@@ -376,12 +286,79 @@ struct ProviderSettingsView: View {
         }
     }
 
-    private func customEndpointSettingsView(title: String) -> some View {
+    // MARK: - LMStudio Settings
+
+    private var lmstudioSettingsView: some View {
+        GlassEffectContainer {
+            VStack(alignment: .leading, spacing: 12) {
+                Label("LMStudio Settings", systemImage: "server.rack")
+                    .font(.headline)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+
+                VStack(spacing: 10) {
+                    // Endpoint
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Server URL")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        TextField(LLMProvider.lmstudio.defaultEndpoint,
+                                  text: $viewModel.customEndpointInput)
+                            .font(.body.monospaced())
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                    }
+
+                    // Model name (optional)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Model Name (optional)")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        TextField("Uses currently loaded model", text: $viewModel.customModelNameInput)
+                            .font(.body.monospaced())
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                    }
+
+                    saveAndClearButtons(hasValue: !viewModel.customEndpointInput.isEmpty)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+
+                // Help text
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "info.circle")
+                        Text("Make sure LMStudio's local server is running.")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    Text("Default endpoint: \(LLMProvider.lmstudio.defaultEndpoint)")
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(2)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+            }
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+        }
+    }
+
+    private func customEndpointSettingsView(title: String, placeholder: String) -> some View {
         GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 Label(title, systemImage: "server.rack")
                     .font(.headline)
-                    .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -390,9 +367,9 @@ struct ProviderSettingsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Endpoint URL")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.secondary)
 
-                        TextField("http://localhost:8000/v1/chat/completions", text: $viewModel.customEndpointInput)
+                        TextField(placeholder, text: $viewModel.customEndpointInput)
                             .font(.body.monospaced())
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
@@ -405,7 +382,7 @@ struct ProviderSettingsView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Model Name")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(.secondary)
 
                         TextField("model-name", text: $viewModel.customModelNameInput)
                             .font(.body.monospaced())
@@ -416,39 +393,45 @@ struct ProviderSettingsView: View {
                             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
-                    HStack(spacing: 10) {
-                        Button {
-                            viewModel.saveCurrentProvider()
-                        } label: {
-                            HStack {
-                                Image(systemName: viewModel.showAPIKeySaved ? "checkmark" : "square.and.arrow.down")
-                                Text(viewModel.showAPIKeySaved ? "Saved" : "Save")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .foregroundStyle(.white)
-                            .background(.black)
-                            .cornerRadius(10)
-                        }
-
-                        if !viewModel.customEndpointInput.isEmpty {
-                            Button(role: .destructive) {
-                                viewModel.clearCurrentProvider()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .foregroundStyle(.white)
-                                    .background(.red)
-                                    .cornerRadius(10)
-                            }
-                        }
-                    }
+                    saveAndClearButtons(hasValue: !viewModel.customEndpointInput.isEmpty)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+        }
+    }
+
+    // MARK: - Shared Save/Clear Buttons
+
+    private func saveAndClearButtons(hasValue: Bool) -> some View {
+        HStack(spacing: 10) {
+            Button {
+                viewModel.saveCurrentProvider()
+            } label: {
+                HStack {
+                    Image(systemName: viewModel.showAPIKeySaved ? "checkmark" : "square.and.arrow.down")
+                    Text(viewModel.showAPIKeySaved ? "Saved" : "Save")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .foregroundStyle(.white)
+                .background(.primary)
+                .cornerRadius(10)
+            }
+
+            if hasValue {
+                Button(role: .destructive) {
+                    viewModel.clearCurrentProvider()
+                } label: {
+                    Image(systemName: "xmark")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .foregroundStyle(.white)
+                        .background(.red)
+                        .cornerRadius(10)
+                }
+            }
         }
     }
 
@@ -471,7 +454,6 @@ struct ProviderSettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Label("Model", systemImage: "cpu")
                     .font(.headline)
-                    .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -485,17 +467,16 @@ struct ProviderSettingsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(model.displayName)
                                     .font(.body.weight(.medium))
-                                    .foregroundStyle(.black)
                                 Text(model.description)
                                     .font(.caption)
-                                    .foregroundStyle(.gray)
+                                    .foregroundStyle(.secondary)
                             }
 
                             Spacer()
 
                             if viewModel.selectedAnthropicModel == model {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.black)
+                                    .foregroundStyle(.primary)
                                     .transition(.scale.combined(with: .opacity))
                             }
                         }
@@ -522,7 +503,6 @@ struct ProviderSettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Label("Model", systemImage: "cpu")
                     .font(.headline)
-                    .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -536,17 +516,16 @@ struct ProviderSettingsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(model.displayName)
                                     .font(.body.weight(.medium))
-                                    .foregroundStyle(.black)
                                 Text(model.description)
                                     .font(.caption)
-                                    .foregroundStyle(.gray)
+                                    .foregroundStyle(.secondary)
                             }
 
                             Spacer()
 
                             if viewModel.selectedOpenAIModel == model {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.black)
+                                    .foregroundStyle(.primary)
                                     .transition(.scale.combined(with: .opacity))
                             }
                         }
@@ -575,19 +554,16 @@ struct ProviderSettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Label("Preferences", systemImage: "slider.horizontal.3")
                     .font(.headline)
-                    .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
                 Toggle(isOn: $viewModel.hapticFeedbackEnabled) {
                     HStack {
                         Image(systemName: "hand.tap")
-                            .foregroundStyle(.black)
                         Text("Haptic Feedback")
-                            .foregroundStyle(.black)
                     }
                 }
-                .tint(.black)
+                .tint(.primary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .padding(.bottom, 16)
@@ -603,7 +579,6 @@ struct ProviderSettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Label("Data", systemImage: "externaldrive")
                     .font(.headline)
-                    .foregroundStyle(.black)
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 

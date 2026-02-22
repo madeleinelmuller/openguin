@@ -7,18 +7,8 @@ struct ChatView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Dynamic gradient background for glass effects
-                LinearGradient(
-                    colors: [
-                        Color.blue.opacity(0.15),
-                        Color.purple.opacity(0.1),
-                        Color.cyan.opacity(0.12),
-                        Color.indigo.opacity(0.08)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                // Animated rainbow blob glow from the bottom
+                RainbowBlobsBackground()
 
                 VStack(spacing: 0) {
                     if viewModel.messages.isEmpty && !viewModel.isLoading {

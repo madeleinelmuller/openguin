@@ -83,8 +83,14 @@ final class SettingsViewModel {
     func loadCurrentSettings() {
         anthropicKeyInput = settings.anthropicAPIKey
         openaiKeyInput = settings.openaiAPIKey
-        customEndpointInput = settings.customEndpoint
         customModelNameInput = settings.customModelName
+
+        // For LMStudio: pre-populate the endpoint field with the default if none saved
+        if settings.selectedProvider == .lmstudio && settings.customEndpoint.isEmpty {
+            customEndpointInput = LLMProvider.lmstudio.defaultEndpoint
+        } else {
+            customEndpointInput = settings.customEndpoint
+        }
     }
 
     func saveCurrentProvider() {
