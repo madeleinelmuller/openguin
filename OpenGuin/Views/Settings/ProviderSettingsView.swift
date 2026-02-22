@@ -17,7 +17,7 @@ struct ProviderSettingsView: View {
                                 .font(.system(size: 48))
                                 .foregroundStyle(.primary)
                                 .frame(width: 100, height: 100)
-                                .background(Circle().fill(.ultraThinMaterial))
+                                .glassEffect(.regular, in: .circle)
 
                             VStack(spacing: 4) {
                                 Text("openguin Settings")
@@ -65,7 +65,7 @@ struct ProviderSettingsView: View {
     // MARK: - Provider Section
 
     private var providerSectionView: some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 Label("AI Provider", systemImage: "network")
                     .font(.headline)
@@ -80,7 +80,7 @@ struct ProviderSettingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -109,13 +109,11 @@ struct ProviderSettingsView: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(
-                        viewModel.selectedProvider == provider
-                            ? Color.blue.opacity(0.2)
-                            : .ultraThinMaterial
-                    )
+            .glassEffect(
+                viewModel.selectedProvider == provider
+                    ? .regular.tint(.blue.opacity(0.2)).interactive()
+                    : .regular.interactive(),
+                in: RoundedRectangle(cornerRadius: 14)
             )
         }
         .buttonStyle(.plain)
@@ -139,7 +137,7 @@ struct ProviderSettingsView: View {
     }
 
     private var anthropicSettingsView: some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label("Anthropic API Key", systemImage: "key.fill")
@@ -199,7 +197,7 @@ struct ProviderSettingsView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
 
                     saveAndClearButtons(hasValue: !viewModel.anthropicKeyInput.isEmpty)
                 }
@@ -212,12 +210,12 @@ struct ProviderSettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
     private var openaiSettingsView: some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label("OpenAI API Key", systemImage: "key.fill")
@@ -271,7 +269,7 @@ struct ProviderSettingsView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
 
                     saveAndClearButtons(hasValue: !viewModel.openaiKeyInput.isEmpty)
                 }
@@ -284,14 +282,14 @@ struct ProviderSettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
     // MARK: - LMStudio Settings
 
     private var lmstudioSettingsView: some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 Label("LMStudio Settings", systemImage: "server.rack")
                     .font(.headline)
@@ -312,7 +310,7 @@ struct ProviderSettingsView: View {
                             .autocorrectionDisabled()
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     // Model name (optional)
@@ -327,7 +325,7 @@ struct ProviderSettingsView: View {
                             .autocorrectionDisabled()
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     saveAndClearButtons(hasValue: !viewModel.customEndpointInput.isEmpty)
@@ -352,12 +350,12 @@ struct ProviderSettingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
     private func customEndpointSettingsView(title: String, placeholder: String) -> some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 Label(title, systemImage: "server.rack")
                     .font(.headline)
@@ -377,7 +375,7 @@ struct ProviderSettingsView: View {
                             .autocorrectionDisabled()
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     // Model name
@@ -392,7 +390,7 @@ struct ProviderSettingsView: View {
                             .autocorrectionDisabled()
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
-                            .background(RoundedRectangle(cornerRadius: 10).fill(.ultraThinMaterial))
+                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     saveAndClearButtons(hasValue: !viewModel.customEndpointInput.isEmpty)
@@ -400,7 +398,7 @@ struct ProviderSettingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -452,7 +450,7 @@ struct ProviderSettingsView: View {
     }
 
     private var anthropicModelSelectionView: some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 Label("Model", systemImage: "cpu")
                     .font(.headline)
@@ -484,13 +482,11 @@ struct ProviderSettingsView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(
-                                    viewModel.selectedAnthropicModel == model
-                                        ? Color.blue.opacity(0.2)
-                                        : .ultraThinMaterial
-                                )
+                        .glassEffect(
+                            viewModel.selectedAnthropicModel == model
+                                ? .regular.tint(.blue.opacity(0.2)).interactive()
+                                : .regular.interactive(),
+                            in: RoundedRectangle(cornerRadius: 12)
                         )
                     }
                     .buttonStyle(.plain)
@@ -498,12 +494,12 @@ struct ProviderSettingsView: View {
                 }
                 .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
     private var openaiModelSelectionView: some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 Label("Model", systemImage: "cpu")
                     .font(.headline)
@@ -535,13 +531,11 @@ struct ProviderSettingsView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(
-                                    viewModel.selectedOpenAIModel == model
-                                        ? Color.blue.opacity(0.2)
-                                        : .ultraThinMaterial
-                                )
+                        .glassEffect(
+                            viewModel.selectedOpenAIModel == model
+                                ? .regular.tint(.blue.opacity(0.2)).interactive()
+                                : .regular.interactive(),
+                            in: RoundedRectangle(cornerRadius: 12)
                         )
                     }
                     .buttonStyle(.plain)
@@ -549,14 +543,14 @@ struct ProviderSettingsView: View {
                 }
                 .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
     // MARK: - Preferences
 
     private var preferencesSection: some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 Label("Preferences", systemImage: "slider.horizontal.3")
                     .font(.headline)
@@ -574,14 +568,14 @@ struct ProviderSettingsView: View {
                 .padding(.vertical, 8)
                 .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
     // MARK: - Danger Zone
 
     private var dangerZoneSection: some View {
-        Group {
+        GlassEffectContainer {
             VStack(alignment: .leading, spacing: 12) {
                 Label("Data", systemImage: "externaldrive")
                     .font(.headline)
@@ -599,16 +593,13 @@ struct ProviderSettingsView: View {
                     .foregroundStyle(.red)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.red.opacity(0.2))
-                    )
+                    .glassEffect(.regular.tint(.red.opacity(0.2)).interactive(), in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
-            .background(RoundedRectangle(cornerRadius: 20).fill(.ultraThinMaterial))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
         .alert("Clear Memory", isPresented: $viewModel.showClearConfirmation) {
             Button("Cancel", role: .cancel) { }
