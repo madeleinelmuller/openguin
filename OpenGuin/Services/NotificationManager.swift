@@ -3,7 +3,7 @@ import UserNotifications
 import UIKit
 
 @MainActor
-final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
+final class NotificationManager: NSObject, @preconcurrency UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
     private override init() {
@@ -38,6 +38,40 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             )
 
             try? await UNUserNotificationCenter.current().add(request)
+        }
+    }
+
+    /// Schedules a local notification for a future time.
+    func scheduleAgentTaskNotification(task: String, note: String?, at date: Date) async -> String {
+        guard date > Date() else {
+            return "[Error: Scheduled time must be in the future.]"
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Scheduled task"
+        if let note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            content.body = "\(task) — \(note)"
+        } else {
+            content.body = task
+        }
+        content.sound = .default
+
+        let dateComponents = Calendar.current.dateComponents(
+            [.year, .month, .day, .hour, .minute, .second],
+            from: date
+        )
+        let trigger = UNCalendarNotificationTrigger(dateMatching: dateComponents, repeats: false)
+        let identifier = "scheduled-task-\(UUID().uuidString)"
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+
+        do {
+            try await UNUserNotificationCenter.current().add(request)
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            return "Scheduled task '\(task)' for \(formatter.string(from: date)) (id: \(identifier))."
+        } catch {
+            return "[Error: Failed to schedule task notification: \(error.localizedDescription)]"
         }
     }
 
