@@ -2,6 +2,7 @@ import Foundation
 import UserNotifications
 import UIKit
 
+@MainActor
 final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
@@ -20,43 +21,42 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     /// Sends a local notification only when the app is not in the foreground.
     func sendResponseNotification(responseText: String) {
-        // Must run on main thread to check applicationState
-        Task { @MainActor in
-            guard UIApplication.shared.applicationState != .active else { return }
+        guard UIApplication.shared.applicationState != .active else { return }
 
-            let content = UNMutableNotificationContent()
-            content.title = "openguin"
-            let trimmed = responseText.trimmingCharacters(in: .whitespacesAndNewlines)
-            content.body = trimmed.isEmpty ? "New message" : String(trimmed.prefix(160))
-            content.sound = .default
+        let content = UNMutableNotificationContent()
+        content.title = "openguin"
+        let trimmed = responseText.trimmingCharacters(in: .whitespacesAndNewlines)
+        content.body = trimmed.isEmpty ? "New message" : String(trimmed.prefix(160))
+        content.sound = .default
 
-            let request = UNNotificationRequest(
-                identifier: UUID().uuidString,
-                content: content,
-                trigger: nil // deliver immediately
-            )
+        let request = UNNotificationRequest(
+            identifier: UUID().uuidString,
+            content: content,
+            trigger: nil // deliver immediately
+        )
 
-            UNUserNotificationCenter.current().add(request)
-        }
+        UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - UNUserNotificationCenterDelegate
+    // `nonisolated` because the OS calls these without actor context,
+    // and neither method touches MainActor-isolated state.
 
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        // Suppress banner when app is foregrounded
+        // Suppress banner when the app is in the foreground
         completionHandler([])
     }
 
-    func userNotificationCenter(
+    nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        // User tapped the notification — just complete (app opens to chat)
+        // User tapped the notification — app opens to chat automatically
         completionHandler()
     }
 }
