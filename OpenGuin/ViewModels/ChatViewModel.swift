@@ -221,6 +221,8 @@ final class ChatViewModel {
             let finalContent = messages[lastIndex].content
             if !finalContent.isEmpty {
                 conversationHistory.append(ChatMessage(role: .assistant, content: finalContent))
+                // Notify the user if the app is in the background
+                NotificationManager.shared.sendResponseNotification(responseText: finalContent)
             } else {
                 messages.remove(at: lastIndex)
             }

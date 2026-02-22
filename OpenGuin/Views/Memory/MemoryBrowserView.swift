@@ -7,18 +7,8 @@ struct MemoryBrowserView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                LinearGradient(
-                    colors: [
-                        Color.teal.opacity(0.12),
-                        Color.green.opacity(0.08),
-                        Color.cyan.opacity(0.1),
-                        Color.mint.opacity(0.06)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                // Animated rainbow blob glow from the bottom
+                RainbowBlobsBackground()
 
                 ScrollView {
                     LazyVStack(spacing: 12) {
