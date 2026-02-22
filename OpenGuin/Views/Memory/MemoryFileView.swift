@@ -7,16 +7,7 @@ struct MemoryFileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                LinearGradient(
-                    colors: [
-                        Color.teal.opacity(0.1),
-                        Color.green.opacity(0.06),
-                        Color.cyan.opacity(0.08)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                AnimatedRainbowBackground()
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {

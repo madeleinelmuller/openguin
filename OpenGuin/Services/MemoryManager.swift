@@ -7,8 +7,9 @@ actor MemoryManager {
     private let memoryRoot: URL
 
     private init() {
-        let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        memoryRoot = docs.appendingPathComponent("AgentMemory", isDirectory: true)
+        let docs = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
+        let base = docs.first ?? URL(fileURLWithPath: NSTemporaryDirectory())
+        memoryRoot = base.appendingPathComponent("AgentMemory", isDirectory: true)
         Task { await setupDefaultStructure() }
     }
 

@@ -79,10 +79,10 @@ final class SettingsManager {
         case .openai:
             return openaiAPIKey
         case .openaiCompatible:
-            return customEndpoint.isEmpty ? "" : customModelName
+            return customEndpoint.isEmpty ? "" : customEndpoint
         case .lmstudio:
-            // LMStudio defaults to "lm-studio" as the API key if not specified
-            return customEndpoint.isEmpty ? "lm-studio" : customEndpoint
+            // LMStudio accepts any string as the key; "lm-studio" is the conventional default
+            return "lm-studio"
         }
     }
 
@@ -92,7 +92,9 @@ final class SettingsManager {
             return !effectiveAPIKey.isEmpty
         case .openai:
             return !openaiAPIKey.isEmpty
-        case .openaiCompatible, .lmstudio:
+        case .openaiCompatible:
+            return !customEndpoint.isEmpty && !customModelName.isEmpty
+        case .lmstudio:
             return !customEndpoint.isEmpty && !customModelName.isEmpty
         }
     }
@@ -104,23 +106,33 @@ final class SettingsManager {
     var currentLLMConfiguration: LLMConfiguration {
         let apiKey: String
         let modelId: String
+        let endpoint: String?
 
         switch selectedProvider {
         case .anthropic:
             apiKey = effectiveAPIKey
             modelId = selectedAnthropicModel.rawValue
+            endpoint = nil
         case .openai:
             apiKey = openaiAPIKey
             modelId = selectedOpenAIModel.rawValue
-        case .openaiCompatible, .lmstudio:
-            apiKey = customEndpoint
+            endpoint = nil
+        case .openaiCompatible:
+            apiKey = customEndpoint  // endpoint doubles as the auth bearer for custom
             modelId = customModelName
+            endpoint = customEndpoint
+        case .lmstudio:
+            apiKey = "lm-studio"
+            modelId = customModelName.isEmpty ? "local-model" : customModelName
+            endpoint = customEndpoint.isEmpty
+                ? "http://localhost:1234/v1/chat/completions"
+                : customEndpoint
         }
 
         return LLMConfiguration(
             provider: selectedProvider,
             apiKey: apiKey,
-            endpoint: customEndpoint.isEmpty ? nil : customEndpoint,
+            endpoint: endpoint,
             modelId: modelId,
             customModelName: customModelName.isEmpty ? nil : customModelName
         )

@@ -221,6 +221,10 @@ final class ChatViewModel {
             let finalContent = messages[lastIndex].content
             if !finalContent.isEmpty {
                 conversationHistory.append(ChatMessage(role: .assistant, content: finalContent))
+                // Fire notification so user knows the model replied (useful when app is backgrounded)
+                Task {
+                    await NotificationManager.shared.sendResponseNotification(preview: finalContent)
+                }
             } else {
                 messages.remove(at: lastIndex)
             }

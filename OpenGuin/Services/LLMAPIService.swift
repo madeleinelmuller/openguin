@@ -158,12 +158,13 @@ final class LLMAPIService {
         onComplete: @Sendable @escaping (String?) -> Void,
         onError: @Sendable @escaping (Error) -> Void
     ) async {
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
-            onError(APIError(message: "Failed to encode request"))
+        guard let bodyData = try? JSONSerialization.data(withJSONObject: body),
+              let endpointURL = URL(string: config.effectiveEndpoint) else {
+            onError(APIError(message: "Failed to encode request or invalid endpoint URL"))
             return
         }
 
-        var urlRequest = URLRequest(url: URL(string: config.effectiveEndpoint)!)
+        var urlRequest = URLRequest(url: endpointURL)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue(config.apiKey, forHTTPHeaderField: "x-api-key")
@@ -307,12 +308,13 @@ final class LLMAPIService {
         onComplete: @Sendable @escaping (String?) -> Void,
         onError: @Sendable @escaping (Error) -> Void
     ) async {
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
-            onError(APIError(message: "Failed to encode request"))
+        guard let bodyData = try? JSONSerialization.data(withJSONObject: body),
+              let endpointURL = URL(string: config.effectiveEndpoint) else {
+            onError(APIError(message: "Failed to encode request or invalid endpoint URL"))
             return
         }
 
-        var urlRequest = URLRequest(url: URL(string: config.effectiveEndpoint)!)
+        var urlRequest = URLRequest(url: endpointURL)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")

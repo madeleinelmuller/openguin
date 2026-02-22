@@ -12,9 +12,9 @@ struct MessageBubbleView: View {
 
             if message.role == .assistant {
                 // Avatar
-                Image(systemName: "bird")
-                    .font(.caption)
-                    .foregroundStyle(.primary)
+                Image("OpenGuinIcon")
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: 28, height: 28)
                     .glassEffect(.regular, in: .circle)
             }
