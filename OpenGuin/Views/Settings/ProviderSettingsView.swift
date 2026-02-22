@@ -6,42 +6,8 @@ struct ProviderSettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Modern background with rainbow gradient from bottom
-                VStack(spacing: 0) {
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            Color.white.opacity(0.95),
-                            Color.gray.opacity(0.05)
-                        ]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                    .ignoresSafeArea()
-
-                    Spacer()
-                }
-
-                // Rainbow blur gradient radiating from bottom
-                VStack(spacing: 0) {
-                    Spacer()
-                    ZStack {
-                        RadialGradient(
-                            gradient: Gradient(colors: [
-                                Color.red.opacity(0.15),
-                                Color.orange.opacity(0.12),
-                                Color.yellow.opacity(0.10),
-                                Color.green.opacity(0.08),
-                                Color.blue.opacity(0.06),
-                                Color.purple.opacity(0.04),
-                                Color.clear
-                            ]),
-                            center: .bottom,
-                            radius: 600
-                        )
-                        .blur(radius: 80)
-                    }
-                    .ignoresSafeArea()
-                }
+                // Animated rainbow background
+                AnimatedRainbowBackground()
 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -391,7 +357,12 @@ struct ProviderSettingsView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.gray)
 
-                        TextField("http://localhost:8000/v1/chat/completions", text: $viewModel.customEndpointInput)
+                        TextField(
+                            viewModel.selectedProvider == .lmstudio
+                                ? "http://localhost:1234/v1/chat/completions"
+                                : "http://localhost:8000/v1/chat/completions",
+                            text: $viewModel.customEndpointInput
+                        )
                             .font(.body.monospaced())
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()

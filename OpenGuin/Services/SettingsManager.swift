@@ -78,8 +78,11 @@ final class SettingsManager {
             return anthropicAPIKey.isEmpty ? Self.developmentAPIKey : anthropicAPIKey
         case .openai:
             return openaiAPIKey
-        case .openaiCompatible, .lmstudio:
+        case .openaiCompatible:
             return customEndpoint.isEmpty ? "" : customModelName
+        case .lmstudio:
+            // LMStudio defaults to "lm-studio" as the API key if not specified
+            return customEndpoint.isEmpty ? "lm-studio" : customEndpoint
         }
     }
 

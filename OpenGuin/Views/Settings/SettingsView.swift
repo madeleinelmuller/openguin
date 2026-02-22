@@ -6,18 +6,8 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                LinearGradient(
-                    colors: [
-                        Color.orange.opacity(0.1),
-                        Color.pink.opacity(0.08),
-                        Color.red.opacity(0.06),
-                        Color.yellow.opacity(0.05)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                // Animated rainbow background
+                AnimatedRainbowBackground()
 
                 ScrollView {
                     VStack(spacing: 20) {
