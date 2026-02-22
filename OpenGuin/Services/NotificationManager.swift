@@ -3,7 +3,7 @@ import UserNotifications
 import UIKit
 
 @MainActor
-final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
+final class NotificationManager: NSObject, @preconcurrency UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
     private override init() {
