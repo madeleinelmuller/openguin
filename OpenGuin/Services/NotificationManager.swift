@@ -2,6 +2,7 @@ import Foundation
 import UserNotifications
 import UIKit
 
+@MainActor
 final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
@@ -36,7 +37,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 trigger: nil // deliver immediately
             )
 
-            UNUserNotificationCenter.current().add(request)
+            try? await UNUserNotificationCenter.current().add(request)
         }
     }
 
