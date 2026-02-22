@@ -177,6 +177,28 @@ actor MemoryManager {
                 ],
                 "required": ["path"]
             ]
+        ],
+        [
+            "name": "schedule_task",
+            "description": "Schedule a task reminder for a specific future time. Use ISO-8601 datetime like '2026-01-15T14:30:00-05:00'.",
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "task": [
+                        "type": "string",
+                        "description": "What should happen at that time. This will be shown in the notification."
+                    ],
+                    "time": [
+                        "type": "string",
+                        "description": "Future datetime in ISO-8601 format including timezone offset."
+                    ],
+                    "note": [
+                        "type": "string",
+                        "description": "Optional extra context shown with the task."
+                    ]
+                ],
+                "required": ["task", "time"]
+            ]
         ]
     ]
 
@@ -343,6 +365,14 @@ actor MemoryManager {
         case "delete_memory":
             guard let path = input["path"] as? String else { return "[Error: Missing 'path' parameter]" }
             return deleteFile(path: path)
+        case "schedule_task":
+            guard let task = input["task"] as? String,
+                  let time = input["time"] as? String else { return "[Error: Missing 'task' or 'time' parameter]" }
+            guard let date = Self.parseISO8601Date(from: time) else {
+                return "[Error: Invalid time format. Use ISO-8601 like 2026-01-15T14:30:00-05:00]"
+            }
+            let note = input["note"] as? String
+            return await NotificationManager.shared.scheduleAgentTaskNotification(task: task, note: note, at: date)
         default:
             return "[Error: Unknown tool '\(name)']"
         }
@@ -353,5 +383,16 @@ actor MemoryManager {
     private func resolvedURL(for path: String) -> URL {
         let cleaned = path.hasPrefix("/") ? String(path.dropFirst()) : path
         return memoryRoot.appendingPathComponent(cleaned)
+    }
+
+    nonisolated private static func parseISO8601Date(from value: String) -> Date? {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: value) {
+            return date
+        }
+
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: value)
     }
 }
