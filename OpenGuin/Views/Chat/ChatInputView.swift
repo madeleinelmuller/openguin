@@ -4,11 +4,24 @@ struct ChatInputView: View {
     @Binding var text: String
     let isLoading: Bool
     let onSend: () -> Void
+    @State private var settings = SettingsManager.shared
     @FocusState private var isFocused: Bool
     @Namespace private var inputNamespace
 
     var body: some View {
         GlassEffectContainer(spacing: 12) {
+            if settings.selectedVoiceMode != .off {
+                HStack(spacing: 8) {
+                    Image(systemName: "waveform")
+                    Text("Voice: \(settings.selectedVoiceMode.displayName)")
+                        .lineLimit(1)
+                }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+            }
+
             HStack(alignment: .bottom, spacing: 10) {
                 // Text field
                 TextField("Message openguin...", text: $text, axis: .vertical)

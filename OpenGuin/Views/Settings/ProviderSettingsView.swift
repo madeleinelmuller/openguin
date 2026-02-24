@@ -566,6 +566,50 @@ struct ProviderSettingsView: View {
                 .tint(.primary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
+
+                Divider()
+                    .padding(.horizontal, 16)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Voice Mode", systemImage: "waveform")
+                        .font(.subheadline.weight(.semibold))
+
+                    ForEach(VoiceMode.allCases) { mode in
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                viewModel.selectedVoiceMode = mode
+                            }
+                        } label: {
+                            HStack(spacing: 10) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(mode.displayName)
+                                        .font(.body.weight(.medium))
+                                    Text(mode.description)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.leading)
+                                }
+
+                                Spacer()
+
+                                if viewModel.selectedVoiceMode == mode {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.primary)
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 10)
+                            .glassEffect(
+                                viewModel.selectedVoiceMode == mode
+                                    ? .regular.tint(.blue.opacity(0.2)).interactive()
+                                    : .regular.interactive(),
+                                in: RoundedRectangle(cornerRadius: 12)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
