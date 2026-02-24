@@ -163,7 +163,12 @@ final class LLMAPIService {
             return
         }
 
-        var urlRequest = URLRequest(url: URL(string: config.effectiveEndpoint)!)
+        guard let endpointURL = URL(string: config.effectiveEndpoint) else {
+            onError(APIError(message: "Invalid endpoint URL: \(config.effectiveEndpoint)"))
+            return
+        }
+
+        var urlRequest = URLRequest(url: endpointURL)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue(config.apiKey, forHTTPHeaderField: "x-api-key")
@@ -312,7 +317,12 @@ final class LLMAPIService {
             return
         }
 
-        var urlRequest = URLRequest(url: URL(string: config.effectiveEndpoint)!)
+        guard let endpointURL = URL(string: config.effectiveEndpoint) else {
+            onError(APIError(message: "Invalid endpoint URL: \(config.effectiveEndpoint)"))
+            return
+        }
+
+        var urlRequest = URLRequest(url: endpointURL)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
