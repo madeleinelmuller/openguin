@@ -15,7 +15,7 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
         case .anthropic: return "Anthropic (Claude)"
         case .openai: return "OpenAI"
         case .openaiCompatible: return "OpenAI Compatible"
-        case .lmstudio: return "LMStudio"
+        case .lmstudio: return "LM Studio"
         }
     }
 
@@ -24,7 +24,7 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
         case .anthropic: return "Claude - Most capable, with extended thinking"
         case .openai: return "GPT-4, GPT-3.5 - OpenAI's models"
         case .openaiCompatible: return "Any OpenAI-compatible endpoint"
-        case .lmstudio: return "Local models via LMStudio"
+        case .lmstudio: return "Local models via LM Studio"
         }
     }
 
@@ -37,7 +37,7 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
         case .anthropic: return "https://api.anthropic.com/v1/messages"
         case .openai: return "https://api.openai.com/v1/chat/completions"
         case .openaiCompatible: return "http://localhost:8000/v1/chat/completions"
-        case .lmstudio: return "http://localhost:1234/v1/chat/completions"
+        case .lmstudio: return "http://localhost:1234/api/v1/chat"
         }
     }
 
@@ -155,7 +155,11 @@ struct LLMConfiguration: Sendable {
     let customModelName: String?
 
     var effectiveEndpoint: String {
-        endpoint ?? provider.defaultEndpoint
+        let base = endpoint ?? provider.defaultEndpoint
+        if provider == .lmstudio {
+            return Self.normalizeLMStudioEndpoint(base)
+        }
+        return base
     }
 
     var effectiveModelName: String {
@@ -169,4 +173,24 @@ struct LLMOptions: Sendable {
     let topP: Double = 1.0
     let frequencyPenalty: Double = 0.0
     let presencePenalty: Double = 0.0
+}
+
+extension LLMConfiguration {
+    fileprivate static func normalizeLMStudioEndpoint(_ endpoint: String) -> String {
+        let trimmed = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard var components = URLComponents(string: trimmed) else { return trimmed }
+
+        let path = components.path.trimmingCharacters(in: .whitespacesAndNewlines)
+        if path.isEmpty || path == "/" {
+            components.path = "/api/v1/chat/completions"
+            return components.string ?? trimmed
+        }
+
+        if path.hasSuffix("/completions") {
+            return components.string ?? trimmed
+        }
+
+        components.path = path.hasSuffix("/") ? "\(path)completions" : "\(path)/completions"
+        return components.string ?? trimmed
+    }
 }
