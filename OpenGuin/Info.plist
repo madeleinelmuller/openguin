@@ -43,8 +43,25 @@
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
+
+			<key>localhost</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
+			<key>127.0.0.1</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+			</dict>
 		</dict>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>openguin needs microphone access for experimental two-way voice chat.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>openguin uses speech recognition to transcribe your voice messages in experimental voice mode.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
