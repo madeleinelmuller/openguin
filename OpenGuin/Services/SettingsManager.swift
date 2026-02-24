@@ -19,6 +19,7 @@ final class SettingsManager {
 
     // MARK: - Other Settings Keys
     private let hapticKey = "haptic_feedback"
+    private let voiceModeKey = "voice_mode"
 
     // MARK: - Provider & API Keys
     var selectedProvider: LLMProvider {
@@ -68,6 +69,12 @@ final class SettingsManager {
     var hapticFeedbackEnabled: Bool {
         didSet {
             UserDefaults.standard.set(hapticFeedbackEnabled, forKey: hapticKey)
+        }
+    }
+
+    var selectedVoiceMode: VoiceMode {
+        didSet {
+            UserDefaults.standard.set(selectedVoiceMode.rawValue, forKey: voiceModeKey)
         }
     }
 
@@ -144,12 +151,15 @@ final class SettingsManager {
         self.customEndpoint = UserDefaults.standard.string(forKey: customEndpointKey) ?? ""
         self.customModelName = UserDefaults.standard.string(forKey: customModelNameKey) ?? ""
 
-        let anthropicModelRaw = UserDefaults.standard.string(forKey: anthropicModelKey) ?? AnthropicModel.sonnet.rawValue
-        self.selectedAnthropicModel = AnthropicModel(rawValue: anthropicModelRaw) ?? .sonnet
+        let anthropicModelRaw = UserDefaults.standard.string(forKey: anthropicModelKey) ?? AnthropicModel.sonnet46.rawValue
+        self.selectedAnthropicModel = AnthropicModel(rawValue: anthropicModelRaw) ?? .sonnet46
 
         let openaiModelRaw = UserDefaults.standard.string(forKey: openaiModelKey) ?? OpenAIModel.gpt4turbo.rawValue
         self.selectedOpenAIModel = OpenAIModel(rawValue: openaiModelRaw) ?? .gpt4turbo
 
         self.hapticFeedbackEnabled = UserDefaults.standard.object(forKey: hapticKey) as? Bool ?? true
+
+        let voiceModeRaw = UserDefaults.standard.string(forKey: voiceModeKey) ?? VoiceMode.off.rawValue
+        self.selectedVoiceMode = VoiceMode(rawValue: voiceModeRaw) ?? .off
     }
 }

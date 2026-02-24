@@ -60,25 +60,25 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
 // MARK: - Model Types
 
 enum AnthropicModel: String, CaseIterable, Identifiable, Sendable {
-    case haiku = "claude-3-5-haiku-20241022"
-    case sonnet = "claude-3-5-sonnet-20241022"
-    case opus = "claude-3-opus-20250219"
+    case haiku45 = "claude-haiku-4-5"
+    case sonnet46 = "claude-sonnet-4-6"
+    case opus46 = "claude-opus-4-6"
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .haiku: return "Claude 3.5 Haiku"
-        case .sonnet: return "Claude 3.5 Sonnet"
-        case .opus: return "Claude 3 Opus"
+        case .haiku45: return "Claude Haiku 4.5"
+        case .sonnet46: return "Claude Sonnet 4.6"
+        case .opus46: return "Claude Opus 4.6"
         }
     }
 
     var description: String {
         switch self {
-        case .haiku: return "Fast & efficient"
-        case .sonnet: return "Balanced performance"
-        case .opus: return "Most capable"
+        case .haiku45: return "Fast & efficient"
+        case .sonnet46: return "Latest balanced flagship"
+        case .opus46: return "Highest capability"
         }
     }
 }
@@ -115,6 +115,34 @@ enum CustomModel: String, CaseIterable, Identifiable, Sendable {
     var displayName: String { "Custom Model" }
 
     var description: String { "Enter your model name" }
+}
+
+enum VoiceMode: String, CaseIterable, Identifiable, Sendable {
+    case off
+    case kittenTTSMicro
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .off: return "Off"
+        case .kittenTTSMicro: return "Kitten TTS Micro"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .off: return "Text-only chat"
+        case .kittenTTSMicro: return "Local TTS via mlx-community/kitten-tts-micro-0.8-6bit"
+        }
+    }
+
+    var ttsModelIdentifier: String? {
+        switch self {
+        case .off: return nil
+        case .kittenTTSMicro: return "mlx-community/kitten-tts-micro-0.8-6bit"
+        }
+    }
 }
 
 // MARK: - Configuration Types

@@ -53,6 +53,11 @@ final class SettingsViewModel {
         set { settings.hapticFeedbackEnabled = newValue }
     }
 
+    var selectedVoiceMode: VoiceMode {
+        get { settings.selectedVoiceMode }
+        set { settings.selectedVoiceMode = newValue }
+    }
+
     // MARK: - Computed Properties
     var hasAPIKey: Bool {
         settings.hasValidAPIKey
