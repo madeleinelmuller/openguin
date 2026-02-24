@@ -28,6 +28,8 @@ final class ChatViewModel {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
+        VoiceConversationService.shared.stopListening()
+
         let userMessage = ChatMessage(role: .user, content: text)
         messages.append(userMessage)
         conversationHistory.append(userMessage)
@@ -223,6 +225,13 @@ final class ChatViewModel {
                 conversationHistory.append(ChatMessage(role: .assistant, content: finalContent))
                 // Notify the user if the app is in the background
                 NotificationManager.shared.sendResponseNotification(responseText: finalContent)
+
+                if SettingsManager.shared.selectedVoiceMode != .off {
+                    VoiceConversationService.shared.speak(finalContent, restartListeningAfterFinish: true) { transcript in
+                        self.inputText = transcript
+                        self.sendMessage()
+                    }
+                }
             } else {
                 messages.remove(at: lastIndex)
             }

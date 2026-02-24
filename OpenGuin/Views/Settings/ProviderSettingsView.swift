@@ -571,7 +571,7 @@ struct ProviderSettingsView: View {
                     .padding(.horizontal, 16)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Label("Voice Mode", systemImage: "waveform")
+                    Label("Voice Mode (Experimental)", systemImage: "waveform")
                         .font(.subheadline.weight(.semibold))
 
                     ForEach(VoiceMode.allCases) { mode in

@@ -121,7 +121,12 @@ final class ClaudeAPIService {
             return
         }
 
-        var urlRequest = URLRequest(url: URL(string: baseURL)!)
+        guard let endpointURL = URL(string: baseURL) else {
+            onError(APIError(message: "Invalid endpoint URL: \(baseURL)"))
+            return
+        }
+
+        var urlRequest = URLRequest(url: endpointURL)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         urlRequest.setValue(apiKey, forHTTPHeaderField: "x-api-key")
