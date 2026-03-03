@@ -107,16 +107,6 @@ enum OpenAIModel: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-enum CustomModel: String, CaseIterable, Identifiable, Sendable {
-    case custom = "custom"
-
-    var id: String { rawValue }
-
-    var displayName: String { "Custom Model" }
-
-    var description: String { "Enter your model name" }
-}
-
 enum VoiceMode: String, CaseIterable, Identifiable, Sendable {
     case off
     case kittenTTSMicro

@@ -3,11 +3,11 @@ import SwiftUI
 struct MemoryBrowserView: View {
     @State private var memoryStructure: MemoryDirectory?
     @State private var selectedFile: MemoryFile?
+    @Namespace private var memoryNamespace
 
     var body: some View {
         NavigationStack {
             ZStack {
-                // Animated rainbow blob glow from the bottom
                 RainbowBlobsBackground()
 
                 ScrollView {
@@ -130,11 +130,11 @@ struct MemoryDirectorySection: View {
     let directory: MemoryDirectory
     let onSelectFile: (MemoryFile) -> Void
     @State private var isExpanded = true
+    @Namespace private var dirNamespace
 
     var body: some View {
         GlassEffectContainer {
             VStack(spacing: 8) {
-                // Directory header
                 Button {
                     withAnimation(.bouncy) {
                         isExpanded.toggle()
@@ -158,10 +158,12 @@ struct MemoryDirectorySection: View {
                         Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
+                            .contentTransition(.symbolEffect(.replace))
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
                     .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 16))
+                    .glassEffectID("dirHeader-\(directory.id)", in: dirNamespace)
                 }
                 .buttonStyle(.plain)
 
@@ -171,11 +173,13 @@ struct MemoryDirectorySection: View {
                             onSelectFile(file)
                         }
                         .padding(.leading, 16)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
                     ForEach(directory.subdirectories) { subdir in
                         MemoryDirectorySection(directory: subdir, onSelectFile: onSelectFile)
                             .padding(.leading, 16)
+                            .transition(.move(edge: .top).combined(with: .opacity))
                     }
                 }
             }

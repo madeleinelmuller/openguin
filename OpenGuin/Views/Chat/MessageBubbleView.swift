@@ -11,7 +11,6 @@ struct MessageBubbleView: View {
             }
 
             if message.role == .assistant {
-                // Avatar
                 Image(systemName: "bird")
                     .font(.caption)
                     .foregroundStyle(.primary)
@@ -23,44 +22,36 @@ struct MessageBubbleView: View {
                 if message.role == .user {
                     Text(message.content)
                         .font(.body)
-                        .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.blue, Color.blue.opacity(0.85)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+                        .glassEffect(
+                            .regular.tint(.blue),
+                            in: RoundedRectangle(cornerRadius: 20)
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
                 } else {
-                    GlassEffectContainer {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(LocalizedStringKey(message.content))
-                                .font(.body)
-                                .textSelection(.enabled)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(LocalizedStringKey(message.content))
+                            .font(.body)
+                            .textSelection(.enabled)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
 
-                            if message.isStreaming {
-                                HStack {
-                                    Spacer()
-                                    Circle()
-                                        .fill(.primary.opacity(0.4))
-                                        .frame(width: 6, height: 6)
-                                        .opacity(appeared ? 1 : 0.3)
-                                        .animation(.easeInOut(duration: 0.6).repeatForever(), value: appeared)
-                                }
-                                .padding(.trailing, 16)
-                                .padding(.bottom, 8)
+                        if message.isStreaming {
+                            HStack {
+                                Spacer()
+                                Circle()
+                                    .fill(.primary.opacity(0.4))
+                                    .frame(width: 6, height: 6)
+                                    .opacity(appeared ? 1 : 0.3)
+                                    .animation(.easeInOut(duration: 0.6).repeatForever(), value: appeared)
                             }
+                            .padding(.trailing, 16)
+                            .padding(.bottom, 8)
                         }
-                        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
                     }
+                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
                 }
 
-                // Timestamp
                 Text(message.timestamp, style: .time)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
@@ -78,12 +69,7 @@ struct MessageBubbleView: View {
 
 #Preview {
     ZStack {
-        LinearGradient(
-            colors: [.blue.opacity(0.15), .purple.opacity(0.1)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .ignoresSafeArea()
+        RainbowBlobsBackground()
 
         VStack(spacing: 12) {
             MessageBubbleView(message: ChatMessage(role: .user, content: "Hello there!"))

@@ -347,6 +347,11 @@ final class LLMAPIService {
                 return
             }
 
+            var didComplete = false
+            var pendingToolId = ""
+            var pendingToolName = ""
+            var pendingToolArgs = ""
+
             for try await line in bytes.lines {
                 guard line.hasPrefix("data: ") else { continue }
                 let jsonStr = String(line.dropFirst(6))
@@ -363,13 +368,22 @@ final class LLMAPIService {
                         onText(content)
                     }
 
+                    // OpenAI streams tool calls incrementally: id+name in first chunk,
+                    // arguments across subsequent chunks
                     if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
                         for toolCall in toolCalls {
-                            if let id = toolCall["id"] as? String,
-                               let function = toolCall["function"] as? [String: Any],
-                               let name = function["name"] as? String,
-                               let arguments = function["arguments"] as? String {
-                                onToolUse(id, name, arguments)
+                            if let id = toolCall["id"] as? String {
+                                // New tool call starting — flush any pending one
+                                if !pendingToolId.isEmpty {
+                                    onToolUse(pendingToolId, pendingToolName, pendingToolArgs)
+                                }
+                                pendingToolId = id
+                                pendingToolName = (toolCall["function"] as? [String: Any])?["name"] as? String ?? ""
+                                pendingToolArgs = (toolCall["function"] as? [String: Any])?["arguments"] as? String ?? ""
+                            } else if let function = toolCall["function"] as? [String: Any],
+                                      let args = function["arguments"] as? String {
+                                // Continuation chunk — accumulate arguments
+                                pendingToolArgs += args
                             }
                         }
                     }
@@ -377,14 +391,25 @@ final class LLMAPIService {
 
                 if let choices = event["choices"] as? [[String: Any]],
                    let choice = choices.first,
-                   let finishReason = choice["finish_reason"] as? String {
-                    if finishReason != "null" {
-                        onComplete(finishReason)
+                   let finishReason = choice["finish_reason"] as? String,
+                   finishReason != "null" {
+                    // Flush any pending tool call before completing
+                    if !pendingToolId.isEmpty {
+                        onToolUse(pendingToolId, pendingToolName, pendingToolArgs)
+                        pendingToolId = ""
                     }
+                    didComplete = true
+                    onComplete(finishReason)
                 }
             }
 
-            onComplete(nil)
+            if !didComplete {
+                // Flush any remaining pending tool call
+                if !pendingToolId.isEmpty {
+                    onToolUse(pendingToolId, pendingToolName, pendingToolArgs)
+                }
+                onComplete(nil)
+            }
 
         } catch {
             onError(error)

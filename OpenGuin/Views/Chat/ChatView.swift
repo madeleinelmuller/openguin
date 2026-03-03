@@ -3,11 +3,11 @@ import SwiftUI
 struct ChatView: View {
     @State private var viewModel = ChatViewModel()
     @State private var showNewChatConfirm = false
+    @Namespace private var chatNamespace
 
     var body: some View {
         NavigationStack {
             ZStack {
-                // Animated rainbow blob glow from the bottom
                 RainbowBlobsBackground()
 
                 VStack(spacing: 0) {
@@ -53,7 +53,6 @@ struct ChatView: View {
                 Button("OK") { }
                 if viewModel.errorMessage?.contains("API key") == true {
                     Button("Open Settings") {
-                        // Post notification to switch to settings tab
                         NotificationCenter.default.post(name: .switchToSettings, object: nil)
                     }
                 }
@@ -77,9 +76,10 @@ struct ChatView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "sparkles")
                         .font(.system(size: 56))
-                        .foregroundStyle(.black)
+                        .foregroundStyle(.primary)
                         .frame(width: 100, height: 100)
                         .glassEffect(.regular, in: .circle)
+                        .glassEffectID("emptyIcon", in: chatNamespace)
 
                     Text("openguin")
                         .font(.largeTitle)
@@ -92,6 +92,7 @@ struct ChatView: View {
                 }
                 .padding(32)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
+                .glassEffectID("emptyCard", in: chatNamespace)
             }
             .padding(.horizontal, 40)
 
