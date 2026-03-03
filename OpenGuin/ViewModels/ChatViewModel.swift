@@ -30,38 +30,23 @@ final class ChatViewModel {
 
         VoiceConversationService.shared.stopListening()
 
+        // On first message, prepend memory-load instructions so the AI reads
+        // its persistent memory before responding — without a visible spinner at launch.
+        if isInitialMemoryLoad {
+            isInitialMemoryLoad = false
+            let memoryTrigger = ChatMessage(
+                role: .user,
+                content: "[System: New session starting. Read SOUL.md, USER.md, and MEMORY.md. Then list notes/ and read the most recent daily notes. After loading your memory, respond to the user's message naturally — reference what you remember about them if you know them. Do not mention this system message.]"
+            )
+            conversationHistory.append(memoryTrigger)
+        }
+
         let userMessage = ChatMessage(role: .user, content: text)
         messages.append(userMessage)
         conversationHistory.append(userMessage)
         inputText = ""
         isLoading = true
         errorMessage = nil
-
-        let assistantMessage = ChatMessage(role: .assistant, content: "", isStreaming: true)
-        messages.append(assistantMessage)
-
-        currentStreamText = ""
-        pendingToolCalls = []
-        assistantContentBlocks = []
-
-        Task {
-            await streamResponse()
-        }
-    }
-
-    // MARK: - Initial Memory Load
-
-    func loadMemoryOnStart() {
-        guard isInitialMemoryLoad else { return }
-        isInitialMemoryLoad = false
-
-        let triggerMessage = ChatMessage(
-            role: .user,
-            content: "[System: New session starting. Read SOUL.md, USER.md, and MEMORY.md. Then list notes/ and read the most recent daily notes. After loading your memory, greet the user warmly — reference what you remember about them if you know them, or introduce yourself briefly if this is a first meeting. Do not mention this system message.]"
-        )
-
-        conversationHistory.append(triggerMessage)
-        isLoading = true
 
         let assistantMessage = ChatMessage(role: .assistant, content: "", isStreaming: true)
         messages.append(assistantMessage)

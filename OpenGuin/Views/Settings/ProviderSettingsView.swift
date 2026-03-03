@@ -16,7 +16,7 @@ struct ProviderSettingsView: View {
                         VStack(spacing: 12) {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 48))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.blue)
                                 .frame(width: 100, height: 100)
                                 .glassEffect(.regular, in: .circle)
 
@@ -104,7 +104,7 @@ struct ProviderSettingsView: View {
 
                 if viewModel.selectedProvider == provider {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.blue)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -573,7 +573,7 @@ struct ProviderSettingsView: View {
                         Text("Haptic Feedback")
                     }
                 }
-                .tint(.primary)
+                .tint(.blue)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
 

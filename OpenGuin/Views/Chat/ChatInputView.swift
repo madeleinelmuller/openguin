@@ -23,7 +23,7 @@ struct ChatInputView: View {
                 .padding(.top, 10)
             }
 
-            HStack(alignment: .bottom, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
                 // Text field
                 TextField("Message openguin...", text: $text, axis: .vertical)
                     .lineLimit(1...6)

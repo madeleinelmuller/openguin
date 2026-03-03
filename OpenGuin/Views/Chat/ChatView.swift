@@ -3,7 +3,6 @@ import SwiftUI
 struct ChatView: View {
     @State private var viewModel = ChatViewModel()
     @State private var showNewChatConfirm = false
-    @Namespace private var chatNamespace
 
     var body: some View {
         NavigationStack {
@@ -12,7 +11,7 @@ struct ChatView: View {
 
                 VStack(spacing: 0) {
                     if viewModel.messages.isEmpty && !viewModel.isLoading {
-                        emptyStateView
+                        Spacer()
                     } else {
                         messageListView
                     }
@@ -60,43 +59,6 @@ struct ChatView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "An unknown error occurred.")
             }
-            .onAppear {
-                viewModel.loadMemoryOnStart()
-            }
-        }
-    }
-
-    // MARK: - Empty State
-
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            GlassEffectContainer {
-                VStack(spacing: 16) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 56))
-                        .foregroundStyle(.primary)
-                        .frame(width: 100, height: 100)
-                        .glassEffect(.regular, in: .circle)
-                        .glassEffectID("emptyIcon", in: chatNamespace)
-
-                    Text("openguin")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-
-                    Text("Your AI assistant with persistent memory")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(32)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24))
-                .glassEffectID("emptyCard", in: chatNamespace)
-            }
-            .padding(.horizontal, 40)
-
-            Spacer()
         }
     }
 
@@ -143,7 +105,14 @@ struct TypingIndicatorView: View {
     @State private var phase: CGFloat = 0
 
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom, spacing: 8) {
+            // Match the assistant avatar from MessageBubbleView
+            Image(systemName: "bird")
+                .font(.caption)
+                .foregroundStyle(.primary)
+                .frame(width: 28, height: 28)
+                .glassEffect(.regular, in: .circle)
+
             HStack(spacing: 6) {
                 ForEach(0..<3) { i in
                     Circle()
@@ -156,8 +125,9 @@ struct TypingIndicatorView: View {
             .padding(.vertical, 12)
             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
 
-            Spacer()
+            Spacer(minLength: 60)
         }
+        .padding(.horizontal, 4)
         .onAppear {
             withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
                 phase = .pi * 2
