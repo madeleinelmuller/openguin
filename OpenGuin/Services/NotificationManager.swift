@@ -14,7 +14,7 @@ final class NotificationManager: NSObject, @preconcurrency UNUserNotificationCen
     // MARK: - Permission
 
     func requestPermission() async {
-        try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
     }
 
     // MARK: - Send Notification
