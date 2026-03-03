@@ -62,6 +62,7 @@ struct MessageBubbleView: View {
                 Spacer(minLength: 60)
             }
         }
+        .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
         .padding(.horizontal, 4)
         .onAppear { appeared = true }
     }
