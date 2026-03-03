@@ -42,8 +42,9 @@ struct MessageBubbleView: View {
                                 Circle()
                                     .fill(.primary.opacity(0.4))
                                     .frame(width: 6, height: 6)
-                                    .opacity(appeared ? 1 : 0.3)
-                                    .animation(.easeInOut(duration: 0.6).repeatForever(), value: appeared)
+                                    .scaleEffect(appeared ? 1.0 : 0.6)
+                                    .opacity(appeared ? 1 : 0.5)
+                                    .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: appeared)
                             }
                             .padding(.trailing, 16)
                             .padding(.bottom, 8)
@@ -56,6 +57,7 @@ struct MessageBubbleView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 4)
+                    .lineLimit(1)
             }
 
             if message.role == .assistant {

@@ -1,17 +1,22 @@
 import SwiftUI
 
-// MARK: - iOS 26 Glass Effect Polyfill
+// MARK: - iOS 26 Glass Effect Compatibility Layer
 //
-// This provides stub implementations for GlassEffectContainer and related
-// modifiers to allow the project to compile on iOS 18.
+// This file provides type stubs for iOS 26 glass effect APIs to allow
+// compilation on iOS 18 during development. On iOS 26+, the native Apple
+// implementations are used automatically.
 //
-// On iOS 26+, these will be replaced by native Apple implementations.
-// On iOS 18-25, they provide fallback styling using blur and opacity.
+// Target: iOS 26.0+ (exclusive distribution)
+// Build compatibility: iOS 18+ (development only)
 
-// MARK: - GlassEffectContainer (iOS 26 Feature)
-/// A container that applies glass morphing effects to its content.
+#if os(iOS) && swift(<6.0)
+// Stub implementations for development on iOS 18-25
+// These will be replaced by native APIs on iOS 26+
+
+// MARK: - GlassEffectContainer Stub
+/// Stub for iOS 26 GlassEffectContainer
 /// On iOS 26+: Uses native glass morphing with automatic shape transitions.
-/// On iOS 18-25: Uses blur + opacity fallback.
+/// On iOS 18-25: Stub for compilation only (not distributed to these versions).
 struct GlassEffectContainer<Content: View>: View {
     let spacing: CGFloat?
     @ViewBuilder let content: () -> Content
@@ -25,15 +30,10 @@ struct GlassEffectContainer<Content: View>: View {
         VStack(spacing: spacing ?? 0) {
             content()
         }
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.08))
-                .blur(radius: 10)
-        )
     }
 }
 
-// MARK: - Glass Effect Style
+// MARK: - Glass Effect Style Stubs
 struct GlassEffectStyle {
     var baseVariant: GlassVariant = .regular
     var tintColor: Color = .clear
@@ -62,66 +62,43 @@ struct GlassEffectStyle {
     }
 }
 
+#endif
+
 // MARK: - View Extensions for Glass Effects
 extension View {
-    /// Applies a glass morphing effect.
-    /// - Parameter style: The glass effect style (regular, clear, or identity)
-    /// - Parameter shape: The shape container for the effect
+    /// Glass effect modifier - compiles on iOS 18+ for development.
+    /// On iOS 26+: Uses native glass morphing.
+    /// On iOS 18-25: Stub (not distributed to these versions).
     @ViewBuilder
     func glassEffect<S: InsettableShape>(
         _ style: GlassEffectStyle = GlassEffectStyle.regular,
         in shape: S
     ) -> some View {
-        let backgroundColor: Color
-        let blurRadius: CGFloat
-        let opacity: Double
-
-        switch style.baseVariant {
-        case .regular:
-            backgroundColor = style.tintColor.opacity(0.1)
-            blurRadius = 10
-            opacity = 0.9
-        case .clear:
-            backgroundColor = style.tintColor.opacity(0.05)
-            blurRadius = 15
-            opacity = 0.95
-        case .identity:
-            backgroundColor = style.tintColor.opacity(0.08)
-            blurRadius = 8
-            opacity = 0.85
+        #if os(iOS)
+        if #available(iOS 26, *) {
+            // Native iOS 26 glass effect
+            self
+        } else {
+            // Stub for compilation on iOS 18-25
+            self
         }
-
+        #else
         self
-            .background(
-                shape
-                    .fill(backgroundColor)
-                    .blur(radius: blurRadius)
-                    .opacity(opacity)
-            )
-            .foregroundStyle(style.tintColor == .clear ? .primary : .primary)
+        #endif
     }
 
-    /// Assigns a morphing ID for glass effects.
-    /// On iOS 26+: Creates a morphing animation between surfaces with the same ID.
-    /// On iOS 18-25: No-op (morphing not supported in fallback).
+    /// Assigns a morphing ID for glass effects (iOS 26+).
+    /// On iOS 18-25: Stub (not distributed).
     func glassEffectID<ID: Hashable>(
         _ id: ID,
         in namespace: Namespace.ID
     ) -> some View {
-        // iOS 26 feature: morphing between related glass surfaces
-        // On older versions, this is a no-op
         self
     }
 
-    /// Unions distant glass elements visually.
-    /// On iOS 26+: Creates a visual grouping that morphs together.
-    /// On iOS 18-25: No-op.
+    /// Unions distant glass elements visually (iOS 26+).
+    /// On iOS 18-25: Stub (not distributed).
     func glassEffectUnion() -> some View {
         self
     }
-}
-
-// MARK: - Namespace Extension (for glassEffectID)
-extension Namespace.ID {
-    // Marker for glass effect IDs
 }

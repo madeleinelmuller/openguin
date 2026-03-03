@@ -65,12 +65,10 @@ struct ChatInputView: View {
                     Group {
                         if isLoading {
                             ProgressView()
-                                .tint(.white)
                                 .scaleEffect(0.8)
                         } else {
                             Image(systemName: "arrow.up")
                                 .font(.body.weight(.semibold))
-                                .foregroundStyle(.white)
                         }
                     }
                     .frame(width: 36, height: 36)

@@ -105,7 +105,7 @@ struct TypingIndicatorView: View {
     @State private var phase: CGFloat = 0
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
+        HStack(alignment: .center, spacing: 8) {
             // Match the assistant avatar from MessageBubbleView
             Image(systemName: "bird")
                 .font(.caption)
