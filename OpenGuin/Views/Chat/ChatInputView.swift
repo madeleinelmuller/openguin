@@ -52,11 +52,7 @@ struct ChatInputView: View {
                     }
                     .glassEffect(
                         .regular
-<<<<<<< codex/fix-sigabrt-error-hwljvv
-                            .tint(voiceService.isListening ? Color.red : Color.purple)
-=======
                             .tint(voiceService.isListening ? .red : .purple)
->>>>>>> main
                             .interactive(),
                         in: .circle
                     )
@@ -94,11 +90,7 @@ struct ChatInputView: View {
             if settings.selectedVoiceMode != .off && (!voiceService.transcriptPreview.isEmpty || voiceService.errorMessage != nil) {
                 Text(voiceService.errorMessage ?? "Heard: \(voiceService.transcriptPreview)")
                     .font(.caption)
-<<<<<<< codex/fix-sigabrt-error-hwljvv
-                    .foregroundStyle(voiceService.errorMessage == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.red))
-=======
                     .foregroundStyle(voiceService.errorMessage == nil ? .secondary : .red)
->>>>>>> main
                     .padding(.horizontal, 16)
                     .padding(.bottom, 10)
             }
@@ -108,12 +100,7 @@ struct ChatInputView: View {
 
 #Preview {
     ZStack {
-        LinearGradient(
-            colors: [.blue.opacity(0.15), .purple.opacity(0.1)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .ignoresSafeArea()
+        RainbowBlobsBackground()
 
         VStack {
             Spacer()

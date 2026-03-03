@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ProviderSettingsView: View {
     @State private var viewModel = SettingsViewModel()
+    @Namespace private var settingsNamespace
 
     var body: some View {
         NavigationStack {
@@ -86,7 +87,7 @@ struct ProviderSettingsView: View {
 
     private func providerButton(for provider: LLMProvider) -> some View {
         Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(.bouncy) {
                 viewModel.selectedProvider = provider
             }
         } label: {
@@ -123,17 +124,20 @@ struct ProviderSettingsView: View {
 
     @ViewBuilder
     private var providerSpecificSettingsView: some View {
-        switch viewModel.selectedProvider {
-        case .anthropic:
-            anthropicSettingsView
-        case .openai:
-            openaiSettingsView
-        case .openaiCompatible:
-            customEndpointSettingsView(title: "OpenAI-Compatible Endpoint",
-                                       placeholder: "http://localhost:8000/v1/chat/completions")
-        case .lmstudio:
-            lmstudioSettingsView
+        Group {
+            switch viewModel.selectedProvider {
+            case .anthropic:
+                anthropicSettingsView
+            case .openai:
+                openaiSettingsView
+            case .openaiCompatible:
+                customEndpointSettingsView(title: "OpenAI-Compatible Endpoint",
+                                           placeholder: "http://localhost:8000/v1/chat/completions")
+            case .lmstudio:
+                lmstudioSettingsView
+            }
         }
+        .animation(.smooth, value: viewModel.selectedProvider)
     }
 
     private var anthropicSettingsView: some View {
@@ -413,24 +417,30 @@ struct ProviderSettingsView: View {
                     Image(systemName: viewModel.showAPIKeySaved ? "checkmark" : "square.and.arrow.down")
                     Text(viewModel.showAPIKeySaved ? "Saved" : "Save")
                 }
+                .font(.body.weight(.medium))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
-                .foregroundStyle(.white)
-                .background(.primary)
-                .cornerRadius(10)
             }
+            .buttonStyle(.plain)
+            .glassEffect(
+                .regular.tint(.blue).interactive(),
+                in: RoundedRectangle(cornerRadius: 10)
+            )
 
             if hasValue {
                 Button(role: .destructive) {
                     viewModel.clearCurrentProvider()
                 } label: {
                     Image(systemName: "xmark")
+                        .font(.body.weight(.medium))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .foregroundStyle(.white)
-                        .background(.red)
-                        .cornerRadius(10)
                 }
+                .buttonStyle(.plain)
+                .glassEffect(
+                    .regular.tint(.red).interactive(),
+                    in: RoundedRectangle(cornerRadius: 10)
+                )
             }
         }
     }
@@ -576,7 +586,7 @@ struct ProviderSettingsView: View {
 
                     ForEach(VoiceMode.allCases) { mode in
                         Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(.bouncy) {
                                 viewModel.selectedVoiceMode = mode
                             }
                         } label: {
