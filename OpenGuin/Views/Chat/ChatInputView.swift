@@ -21,7 +21,7 @@ struct ChatInputView: View {
                             onSend()
                         }
                     }
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 22))
+                    .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 22))
 
                 Button {
                     onSend()
@@ -41,7 +41,7 @@ struct ChatInputView: View {
                 }
                 .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
                 .glassEffect(
-                    .regular
+                    GlassEffect.regular
                         .tint(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading ? .gray : .blue)
                         .interactive(),
                     in: .circle

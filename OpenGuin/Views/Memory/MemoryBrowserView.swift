@@ -33,7 +33,7 @@ struct MemoryBrowserView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 .padding(24)
-                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                                .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 16))
                             }
                             .padding(.top, 40)
                         }
@@ -90,7 +90,7 @@ struct MemoryFileRow: View {
                     .font(.title3)
                     .foregroundStyle(file.color)
                     .frame(width: 36, height: 36)
-                    .glassEffect(.regular.tint(file.color.opacity(0.3)), in: RoundedRectangle(cornerRadius: 10))
+                    .glassEffect(GlassEffect.regular.tint(file.color.opacity(0.3)), in: RoundedRectangle(cornerRadius: 10))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(file.fileName)
@@ -118,7 +118,7 @@ struct MemoryFileRow: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 16))
+            .glassEffect(GlassEffect.regular.interactive(), in: RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(.plain)
     }
@@ -162,7 +162,7 @@ struct MemoryDirectorySection: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 16))
+                    .glassEffect(GlassEffect.regular.interactive(), in: RoundedRectangle(cornerRadius: 16))
                     .glassEffectID("dirHeader-\(directory.id)", in: dirNamespace)
                 }
                 .buttonStyle(.plain)

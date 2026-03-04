@@ -15,7 +15,7 @@ struct MessageBubbleView: View {
                     .font(.caption)
                     .foregroundStyle(.primary)
                     .frame(width: 28, height: 28)
-                    .glassEffect(.regular, in: .circle)
+                    .glassEffect(GlassEffect.regular, in: .circle)
             }
 
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
@@ -25,7 +25,7 @@ struct MessageBubbleView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 10)
                         .glassEffect(
-                            .regular.tint(.blue),
+                            GlassEffect.regular.tint(.blue),
                             in: RoundedRectangle(cornerRadius: 20)
                         )
                 } else {
@@ -49,7 +49,7 @@ struct MessageBubbleView: View {
                             .padding(.bottom, 8)
                         }
                     }
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+                    .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
                 }
 
                 Text(message.timestamp, style: .time)

@@ -36,8 +36,9 @@ struct GlassEffect {
     }
 }
 
-private struct ErasedShape: Shape {
-    private let pathBuilder: (CGRect) -> Path
+private struct ErasedShape: InsettableShape {
+    nonisolated(unsafe) private let pathBuilder: (CGRect) -> Path
+    private var insetAmount: CGFloat = 0
 
     init<S: Shape>(_ shape: S) {
         pathBuilder = { rect in
@@ -45,13 +46,22 @@ private struct ErasedShape: Shape {
         }
     }
 
+    private init(pathBuilder: @escaping (CGRect) -> Path, insetAmount: CGFloat) {
+        self.pathBuilder = pathBuilder
+        self.insetAmount = insetAmount
+    }
+
     func path(in rect: CGRect) -> Path {
-        pathBuilder(rect)
+        pathBuilder(rect.insetBy(dx: insetAmount, dy: insetAmount))
+    }
+
+    func inset(by amount: CGFloat) -> ErasedShape {
+        ErasedShape(pathBuilder: pathBuilder, insetAmount: insetAmount + amount)
     }
 }
 
 extension View {
-    func glassEffect<S: Shape>(_ effect: GlassEffect = .regular, in shape: S) -> some View {
+    func glassEffect<S: Shape>(_ effect: GlassEffect = GlassEffect.regular, in shape: S) -> some View {
         let resolvedTint = effect.tintColor ?? Color.white.opacity(0.12)
 
         return self
