@@ -59,10 +59,12 @@ extension View {
             .overlay {
                 ErasedShape(shape)
                     .strokeBorder(Color.white.opacity(effect.isInteractive ? 0.3 : 0.18), lineWidth: effect.isInteractive ? 1.2 : 1)
+                    .allowsHitTesting(false)
             }
             .overlay {
                 ErasedShape(shape)
                     .fill(resolvedTint.opacity(effect.isInteractive ? 0.16 : 0.1))
+                    .allowsHitTesting(false)
             }
     }
 
