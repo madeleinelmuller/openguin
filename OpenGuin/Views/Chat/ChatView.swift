@@ -111,7 +111,7 @@ struct TypingIndicatorView: View {
                 .font(.caption)
                 .foregroundStyle(.primary)
                 .frame(width: 28, height: 28)
-                .glassEffect(.regular, in: .circle)
+                .glassEffect(GlassEffect.regular, in: .circle)
 
             HStack(spacing: 6) {
                 ForEach(0..<3) { i in
@@ -123,7 +123,7 @@ struct TypingIndicatorView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 18))
 
             Spacer(minLength: 60)
         }

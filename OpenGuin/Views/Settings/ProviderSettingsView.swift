@@ -18,7 +18,7 @@ struct ProviderSettingsView: View {
                                 .font(.system(size: 48))
                                 .foregroundStyle(.blue)
                                 .frame(width: 100, height: 100)
-                                .glassEffect(.regular, in: .circle)
+                                .glassEffect(GlassEffect.regular, in: .circle)
 
                             VStack(spacing: 4) {
                                 Text("openguin Settings")
@@ -81,7 +81,7 @@ struct ProviderSettingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -112,8 +112,8 @@ struct ProviderSettingsView: View {
             .padding(.vertical, 12)
             .glassEffect(
                 viewModel.selectedProvider == provider
-                    ? .regular.tint(.blue.opacity(0.2)).interactive()
-                    : .regular.interactive(),
+                    ? GlassEffect.regular.tint(.blue.opacity(0.2)).interactive()
+                    : GlassEffect.regular.interactive(),
                 in: RoundedRectangle(cornerRadius: 14)
             )
         }
@@ -201,7 +201,7 @@ struct ProviderSettingsView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                    .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
 
                     saveAndClearButtons(hasValue: !viewModel.anthropicKeyInput.isEmpty)
                 }
@@ -214,7 +214,7 @@ struct ProviderSettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -276,7 +276,7 @@ struct ProviderSettingsView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                    .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
 
                     saveAndClearButtons(hasValue: !viewModel.openaiKeyInput.isEmpty)
                 }
@@ -289,7 +289,7 @@ struct ProviderSettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -317,7 +317,7 @@ struct ProviderSettingsView: View {
                             .autocorrectionDisabled()
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
-                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     // Model name (optional)
@@ -332,7 +332,7 @@ struct ProviderSettingsView: View {
                             .autocorrectionDisabled()
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
-                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
+                            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     saveAndClearButtons(hasValue: !viewModel.customEndpointInput.isEmpty)
@@ -357,7 +357,7 @@ struct ProviderSettingsView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -378,7 +378,7 @@ struct ProviderSettingsView: View {
             }
             .buttonStyle(.plain)
             .glassEffect(
-                .regular.tint(.blue).interactive(),
+                GlassEffect.regular.tint(.blue).interactive(),
                 in: RoundedRectangle(cornerRadius: 10)
             )
 
@@ -393,7 +393,7 @@ struct ProviderSettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .glassEffect(
-                    .regular.tint(.red).interactive(),
+                    GlassEffect.regular.tint(.red).interactive(),
                     in: RoundedRectangle(cornerRadius: 10)
                 )
             }
@@ -449,8 +449,8 @@ struct ProviderSettingsView: View {
                         .padding(.vertical, 10)
                         .glassEffect(
                             viewModel.selectedAnthropicModel == model
-                                ? .regular.tint(.blue.opacity(0.2)).interactive()
-                                : .regular.interactive(),
+                                ? GlassEffect.regular.tint(.blue.opacity(0.2)).interactive()
+                                : GlassEffect.regular.interactive(),
                             in: RoundedRectangle(cornerRadius: 12)
                         )
                     }
@@ -459,7 +459,7 @@ struct ProviderSettingsView: View {
                 }
                 .padding(.bottom, 16)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -498,8 +498,8 @@ struct ProviderSettingsView: View {
                         .padding(.vertical, 10)
                         .glassEffect(
                             viewModel.selectedOpenAIModel == model
-                                ? .regular.tint(.blue.opacity(0.2)).interactive()
-                                : .regular.interactive(),
+                                ? GlassEffect.regular.tint(.blue.opacity(0.2)).interactive()
+                                : GlassEffect.regular.interactive(),
                             in: RoundedRectangle(cornerRadius: 12)
                         )
                     }
@@ -508,7 +508,7 @@ struct ProviderSettingsView: View {
                 }
                 .padding(.bottom, 16)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -538,7 +538,7 @@ struct ProviderSettingsView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
         }
     }
 
@@ -563,13 +563,13 @@ struct ProviderSettingsView: View {
                     .foregroundStyle(.red)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
-                    .glassEffect(.regular.tint(.red.opacity(0.2)).interactive(), in: RoundedRectangle(cornerRadius: 12))
+                    .glassEffect(GlassEffect.regular.tint(.red.opacity(0.2)).interactive(), in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
+            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
         }
         .alert("Clear Memory", isPresented: $viewModel.showClearConfirmation) {
             Button("Cancel", role: .cancel) { }

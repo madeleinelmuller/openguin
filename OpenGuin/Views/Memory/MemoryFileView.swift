@@ -18,7 +18,7 @@ struct MemoryFileView: View {
                                     .font(.title2)
                                     .foregroundStyle(file.color)
                                     .frame(width: 44, height: 44)
-                                    .glassEffect(.regular.tint(file.color.opacity(0.3)), in: RoundedRectangle(cornerRadius: 12))
+                                    .glassEffect(GlassEffect.regular.tint(file.color.opacity(0.3)), in: RoundedRectangle(cornerRadius: 12))
 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(file.fileName)
@@ -36,7 +36,7 @@ struct MemoryFileView: View {
                                 Spacer()
                             }
                             .padding(16)
-                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 16))
                         }
 
                         // File content
@@ -46,7 +46,7 @@ struct MemoryFileView: View {
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(16)
-                                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16))
+                                .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 16))
                         }
                     }
                     .padding(.horizontal, 16)
