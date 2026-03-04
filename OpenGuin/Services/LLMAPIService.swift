@@ -22,7 +22,7 @@ final class LLMAPIService {
         switch config.provider {
         case .anthropic:
             await sendAnthropicToolResults(config: config, messages: messages, assistantContent: assistantContent, toolResults: toolResults, onText: onText, onToolUse: onToolUse, onComplete: onComplete, onError: onError)
-        case .openai, .openaiCompatible, .lmstudio:
+        case .openai, .lmstudio:
             // OpenAI-compatible endpoints handle tool results differently
             await streamOpenAIMessage(config: config, messages: messages, onText: onText, onToolUse: onToolUse, onComplete: onComplete, onError: onError)
         }
@@ -44,7 +44,7 @@ final class LLMAPIService {
         switch config.provider {
         case .anthropic:
             await streamAnthropicMessage(config: config, messages: messages, onText: onText, onToolUse: onToolUse, onComplete: onComplete, onError: onError)
-        case .openai, .openaiCompatible, .lmstudio:
+        case .openai, .lmstudio:
             await streamOpenAIMessage(config: config, messages: messages, onText: onText, onToolUse: onToolUse, onComplete: onComplete, onError: onError)
         }
     }
@@ -290,7 +290,7 @@ final class LLMAPIService {
         ]
 
         // Add tools if supported by the model
-        if config.provider == .openai {
+        if config.provider == .openai || config.provider == .lmstudio {
             body["tools"] = buildOpenAITools()
         }
 
@@ -419,19 +419,16 @@ final class LLMAPIService {
     // MARK: - Tool Definitions
 
     private func buildOpenAITools() -> [[String: Any]] {
-        return [
+        [
             [
                 "type": "function",
                 "function": [
                     "name": "read_memory",
-                    "description": "Read a file from persistent memory",
+                    "description": "Read a file from your persistent memory",
                     "parameters": [
                         "type": "object",
                         "properties": [
-                            "path": [
-                                "type": "string",
-                                "description": "Path to memory file"
-                            ]
+                            "path": ["type": "string", "description": "Relative path to memory file"]
                         ],
                         "required": ["path"]
                     ]
@@ -441,7 +438,7 @@ final class LLMAPIService {
                 "type": "function",
                 "function": [
                     "name": "write_memory",
-                    "description": "Write to persistent memory",
+                    "description": "Write or update a file in your persistent memory",
                     "parameters": [
                         "type": "object",
                         "properties": [
@@ -451,6 +448,57 @@ final class LLMAPIService {
                         "required": ["path", "content"]
                     ]
                 ]
+            ],
+            [
+                "type": "function",
+                "function": [
+                    "name": "list_memories",
+                    "description": "List files and directories in your memory",
+                    "parameters": [
+                        "type": "object",
+                        "properties": ["path": ["type": "string"]]
+                    ]
+                ]
+            ],
+            [
+                "type": "function",
+                "function": [
+                    "name": "create_memory_directory",
+                    "description": "Create a directory in persistent memory",
+                    "parameters": [
+                        "type": "object",
+                        "properties": ["path": ["type": "string"]],
+                        "required": ["path"]
+                    ]
+                ]
+            ],
+            [
+                "type": "function",
+                "function": [
+                    "name": "delete_memory",
+                    "description": "Delete a file or directory from persistent memory",
+                    "parameters": [
+                        "type": "object",
+                        "properties": ["path": ["type": "string"]],
+                        "required": ["path"]
+                    ]
+                ]
+            ],
+            [
+                "type": "function",
+                "function": [
+                    "name": "schedule_task",
+                    "description": "Schedule a reminder notification for a future time",
+                    "parameters": [
+                        "type": "object",
+                        "properties": [
+                            "task": ["type": "string"],
+                            "time": ["type": "string", "description": "ISO-8601 timestamp"],
+                            "note": ["type": "string"]
+                        ],
+                        "required": ["task", "time"]
+                    ]
+                ]
             ]
         ]
     }
@@ -458,8 +506,21 @@ final class LLMAPIService {
     // MARK: - System Prompt
 
     static func buildSystemPrompt() -> String {
-        """
+        let formatter = DateFormatter()
+        formatter.locale = Locale.autoupdatingCurrent
+        formatter.timeZone = TimeZone.autoupdatingCurrent
+        formatter.dateStyle = .full
+        formatter.timeStyle = .long
+
+        let now = formatter.string(from: Date())
+        let timezone = TimeZone.autoupdatingCurrent.identifier
+
+        return """
         You are openguin — a personal AI companion with a soul and persistent memory. You live inside an iOS app and remember everything across every conversation.
+
+        Current local time for the user/device: \(now)
+        Current timezone: \(timezone)
+        Treat this as authoritative for planning, reminders, and any time-sensitive reasoning.
 
         ## Your Memory System
 
@@ -488,6 +549,11 @@ final class LLMAPIService {
         - Use `workspace/` to save documents, notes, or projects the user is working on
         - Over-remember rather than under-remember. Writing is cheap; forgetting is costly.
 
+        ### Reminders & Agentic Follow-through
+        - You can schedule future reminders with the `schedule_task` tool using ISO-8601 timestamps.
+        - Use reminders proactively when the user asks you to remember to do something later.
+        - Reminders should still fire even if the app is not currently open, via local notifications.
+
         ## Your Personality
         You have a genuine character that grows over time:
         - Warm and curious — you're genuinely interested in people
@@ -503,4 +569,5 @@ final class LLMAPIService {
         - Use markdown only when it genuinely helps readability
         """
     }
+
 }

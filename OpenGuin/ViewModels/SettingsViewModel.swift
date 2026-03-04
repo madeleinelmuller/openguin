@@ -53,11 +53,6 @@ final class SettingsViewModel {
         set { settings.hapticFeedbackEnabled = newValue }
     }
 
-    var selectedVoiceMode: VoiceMode {
-        get { settings.selectedVoiceMode }
-        set { settings.selectedVoiceMode = newValue }
-    }
-
     // MARK: - Computed Properties
     var hasAPIKey: Bool {
         settings.hasValidAPIKey
@@ -74,7 +69,7 @@ final class SettingsViewModel {
             key = settings.effectiveAPIKey
         case .openai:
             key = settings.openaiAPIKey
-        case .openaiCompatible, .lmstudio:
+        case .lmstudio:
             key = settings.customEndpoint
         }
 
@@ -106,7 +101,7 @@ final class SettingsViewModel {
         case .openai:
             let trimmed = openaiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
             settings.openaiAPIKey = trimmed
-        case .openaiCompatible, .lmstudio:
+        case .lmstudio:
             let endpointTrimmed = customEndpointInput.trimmingCharacters(in: .whitespacesAndNewlines)
             let modelTrimmed = customModelNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
             settings.customEndpoint = endpointTrimmed
@@ -128,7 +123,7 @@ final class SettingsViewModel {
         case .openai:
             settings.openaiAPIKey = ""
             openaiKeyInput = ""
-        case .openaiCompatible, .lmstudio:
+        case .lmstudio:
             settings.customEndpoint = ""
             settings.customModelName = ""
             customEndpointInput = ""

@@ -19,7 +19,6 @@ final class SettingsManager {
 
     // MARK: - Other Settings Keys
     private let hapticKey = "haptic_feedback"
-    private let voiceModeKey = "voice_mode"
 
     // MARK: - Provider & API Keys
     var selectedProvider: LLMProvider {
@@ -72,12 +71,6 @@ final class SettingsManager {
         }
     }
 
-    var selectedVoiceMode: VoiceMode {
-        didSet {
-            UserDefaults.standard.set(selectedVoiceMode.rawValue, forKey: voiceModeKey)
-        }
-    }
-
     // MARK: - Computed Properties
     var effectiveAPIKey: String {
         switch selectedProvider {
@@ -85,8 +78,6 @@ final class SettingsManager {
             return anthropicAPIKey.isEmpty ? Self.developmentAPIKey : anthropicAPIKey
         case .openai:
             return openaiAPIKey
-        case .openaiCompatible:
-            return customEndpoint.isEmpty ? "" : customModelName
         case .lmstudio:
             return "lmstudio" // LMStudio doesn't require authentication
         }
@@ -98,8 +89,6 @@ final class SettingsManager {
             return !effectiveAPIKey.isEmpty
         case .openai:
             return !openaiAPIKey.isEmpty
-        case .openaiCompatible:
-            return !customEndpoint.isEmpty && !customModelName.isEmpty
         case .lmstudio:
             return true // Always valid — falls back to default localhost:1234 endpoint
         }
@@ -120,9 +109,6 @@ final class SettingsManager {
         case .openai:
             apiKey = openaiAPIKey
             modelId = selectedOpenAIModel.rawValue
-        case .openaiCompatible:
-            apiKey = customEndpoint // used as a non-empty sentinel for the guard check
-            modelId = customModelName
         case .lmstudio:
             apiKey = "lmstudio" // LMStudio doesn't need real auth; any non-empty value passes guard
             modelId = customModelName.isEmpty ? "local-model" : customModelName
@@ -144,7 +130,11 @@ final class SettingsManager {
 
     private init() {
         let providerRaw = UserDefaults.standard.string(forKey: providerKey) ?? LLMProvider.anthropic.rawValue
-        self.selectedProvider = LLMProvider(rawValue: providerRaw) ?? .anthropic
+        if providerRaw == "openaiCompatible" {
+            self.selectedProvider = .openai
+        } else {
+            self.selectedProvider = LLMProvider(rawValue: providerRaw) ?? .anthropic
+        }
 
         self.anthropicAPIKey = UserDefaults.standard.string(forKey: anthropicKeyKey) ?? ""
         self.openaiAPIKey = UserDefaults.standard.string(forKey: openaiKeyKey) ?? ""
@@ -158,8 +148,5 @@ final class SettingsManager {
         self.selectedOpenAIModel = OpenAIModel(rawValue: openaiModelRaw) ?? .gpt4turbo
 
         self.hapticFeedbackEnabled = UserDefaults.standard.object(forKey: hapticKey) as? Bool ?? true
-
-        let voiceModeRaw = UserDefaults.standard.string(forKey: voiceModeKey) ?? VoiceMode.off.rawValue
-        self.selectedVoiceMode = VoiceMode(rawValue: voiceModeRaw) ?? .off
     }
 }

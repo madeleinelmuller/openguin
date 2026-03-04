@@ -5,7 +5,6 @@ import Foundation
 enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
     case anthropic
     case openai
-    case openaiCompatible
     case lmstudio
 
     var id: String { rawValue }
@@ -14,7 +13,6 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .anthropic: return "Anthropic (Claude)"
         case .openai: return "OpenAI"
-        case .openaiCompatible: return "OpenAI Compatible"
         case .lmstudio: return "LM Studio"
         }
     }
@@ -23,20 +21,18 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .anthropic: return "Claude - Most capable, with extended thinking"
         case .openai: return "GPT-4, GPT-3.5 - OpenAI's models"
-        case .openaiCompatible: return "Any OpenAI-compatible endpoint"
         case .lmstudio: return "Local models via LM Studio"
         }
     }
 
     var requiresCustomEndpoint: Bool {
-        self == .openaiCompatible || self == .lmstudio
+        self == .lmstudio
     }
 
     var defaultEndpoint: String {
         switch self {
         case .anthropic: return "https://api.anthropic.com/v1/messages"
         case .openai: return "https://api.openai.com/v1/chat/completions"
-        case .openaiCompatible: return "http://localhost:8000/v1/chat/completions"
         case .lmstudio: return "http://localhost:1234/api/v1/chat"
         }
     }
@@ -103,34 +99,6 @@ enum OpenAIModel: String, CaseIterable, Identifiable, Sendable {
         case .gpt4turbo: return "Most capable"
         case .gpt4: return "Highly capable"
         case .gpt35turbo: return "Fast & efficient"
-        }
-    }
-}
-
-enum VoiceMode: String, CaseIterable, Identifiable, Sendable {
-    case off
-    case kittenTTSMicro
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .off: return "Off"
-        case .kittenTTSMicro: return "Kitten TTS Micro"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .off: return "Text-only chat"
-        case .kittenTTSMicro: return "Local TTS via mlx-community/kitten-tts-micro-0.8-6bit"
-        }
-    }
-
-    var ttsModelIdentifier: String? {
-        switch self {
-        case .off: return nil
-        case .kittenTTSMicro: return "mlx-community/kitten-tts-micro-0.8-6bit"
         }
     }
 }

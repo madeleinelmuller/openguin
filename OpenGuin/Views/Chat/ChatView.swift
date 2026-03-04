@@ -23,7 +23,7 @@ struct ChatView: View {
                     )
                 }
             }
-            .navigationTitle("openguin")
+            .navigationTitle("Chat")
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
