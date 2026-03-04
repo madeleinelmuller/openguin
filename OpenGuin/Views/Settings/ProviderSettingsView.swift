@@ -130,9 +130,6 @@ struct ProviderSettingsView: View {
                 anthropicSettingsView
             case .openai:
                 openaiSettingsView
-            case .openaiCompatible:
-                customEndpointSettingsView(title: "OpenAI-Compatible Endpoint",
-                                           placeholder: "http://localhost:8000/v1/chat/completions")
             case .lmstudio:
                 lmstudioSettingsView
             }
@@ -196,7 +193,10 @@ struct ProviderSettingsView: View {
                             viewModel.isAnthropicKeyVisible.toggle()
                         } label: {
                             Image(systemName: viewModel.isAnthropicKeyVisible ? "eye.slash" : "eye")
-                                .foregroundStyle(.secondary)
+                                .font(.caption.weight(.semibold))
+                                .frame(width: 30, height: 30)
+                                .background(.regularMaterial, in: Circle())
+                                .foregroundStyle(.primary)
                         }
                     }
                     .padding(.horizontal, 12)
@@ -268,7 +268,10 @@ struct ProviderSettingsView: View {
                             viewModel.isOpenAIKeyVisible.toggle()
                         } label: {
                             Image(systemName: viewModel.isOpenAIKeyVisible ? "eye.slash" : "eye")
-                                .foregroundStyle(.secondary)
+                                .font(.caption.weight(.semibold))
+                                .frame(width: 30, height: 30)
+                                .background(.regularMaterial, in: Circle())
+                                .foregroundStyle(.primary)
                         }
                     }
                     .padding(.horizontal, 12)
@@ -350,54 +353,6 @@ struct ProviderSettingsView: View {
                         .font(.caption.monospaced())
                         .foregroundStyle(.tertiary)
                         .lineLimit(2)
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
-            }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
-        }
-    }
-
-    private func customEndpointSettingsView(title: String, placeholder: String) -> some View {
-        GlassEffectContainer {
-            VStack(alignment: .leading, spacing: 12) {
-                Label(title, systemImage: "server.rack")
-                    .font(.headline)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-
-                VStack(spacing: 10) {
-                    // Endpoint
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Endpoint URL")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        TextField(placeholder, text: $viewModel.customEndpointInput)
-                            .font(.body.monospaced())
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
-                    }
-
-                    // Model name
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Model Name")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        TextField("model-name", text: $viewModel.customModelNameInput)
-                            .font(.body.monospaced())
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 10))
-                    }
-
-                    saveAndClearButtons(hasValue: !viewModel.customEndpointInput.isEmpty)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
@@ -573,54 +528,15 @@ struct ProviderSettingsView: View {
                         Text("Haptic Feedback")
                     }
                 }
-                .tint(.blue)
+                .toggleStyle(SwitchToggleStyle(tint: .blue))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
 
-                Divider()
+                Text("Haptics are used for tactile feedback while chatting.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 16)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Label("Voice Mode (Experimental)", systemImage: "waveform")
-                        .font(.subheadline.weight(.semibold))
-
-                    ForEach(VoiceMode.allCases) { mode in
-                        Button {
-                            withAnimation(.bouncy) {
-                                viewModel.selectedVoiceMode = mode
-                            }
-                        } label: {
-                            HStack(spacing: 10) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(mode.displayName)
-                                        .font(.body.weight(.medium))
-                                    Text(mode.description)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .multilineTextAlignment(.leading)
-                                }
-
-                                Spacer()
-
-                                if viewModel.selectedVoiceMode == mode {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.primary)
-                                }
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                            .glassEffect(
-                                viewModel.selectedVoiceMode == mode
-                                    ? .regular.tint(.blue.opacity(0.2)).interactive()
-                                    : .regular.interactive(),
-                                in: RoundedRectangle(cornerRadius: 12)
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                    .padding(.bottom, 16)
             }
             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 20))
         }
