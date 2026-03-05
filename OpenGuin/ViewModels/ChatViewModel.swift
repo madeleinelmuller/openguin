@@ -15,7 +15,7 @@ final class ChatViewModel {
     private let memoryManager = MemoryManager.shared
     private var pendingToolCalls: [(id: String, name: String, inputJSON: String)] = []
     private var assistantContentBlocks: [[String: Any]] = []
-    private var currentStreamText: String = ""
+    private var responseText: String = ""
     private var conversationHistory: [ChatMessage] = []
 
     private var currentLLMConfig: LLMConfiguration {
@@ -27,7 +27,6 @@ final class ChatViewModel {
     func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
-
 
         // On first message, prepend memory-load instructions so the AI reads
         // its persistent memory before responding — without a visible spinner at launch.
@@ -47,10 +46,7 @@ final class ChatViewModel {
         isLoading = true
         errorMessage = nil
 
-        let assistantMessage = ChatMessage(role: .assistant, content: "", isStreaming: true)
-        messages.append(assistantMessage)
-
-        currentStreamText = ""
+        responseText = ""
         pendingToolCalls = []
         assistantContentBlocks = []
 
@@ -71,23 +67,21 @@ final class ChatViewModel {
             onText: { [weak self] text in
                 Task { @MainActor in
                     guard let self else { return }
-                    self.currentStreamText += text
-                    if let lastIndex = self.messages.indices.last,
-                       self.messages[lastIndex].role == .assistant {
-                        self.messages[lastIndex].content = self.currentStreamText
-                    }
+                    self.responseText += text
                 }
             },
             onToolUse: { [weak self] id, name, inputJSON in
                 Task { @MainActor in
                     guard let self else { return }
+                    print("[ChatViewModel] Tool call: \(name)")
                     self.pendingToolCalls.append((id: id, name: name, inputJSON: inputJSON))
                 }
             },
             onComplete: { [weak self] stopReason in
                 Task { @MainActor in
                     guard let self else { return }
-                    if stopReason == "tool_use" && !self.pendingToolCalls.isEmpty {
+                    let isToolCall = (stopReason == "tool_use" || stopReason == "tool_calls") && !self.pendingToolCalls.isEmpty
+                    if isToolCall {
                         await self.handleToolCalls()
                     } else {
                         self.finalizeResponse()
@@ -97,13 +91,10 @@ final class ChatViewModel {
             onError: { [weak self] error in
                 Task { @MainActor in
                     guard let self else { return }
+                    print("[ChatViewModel] Error: \(error.localizedDescription)")
                     self.errorMessage = error.localizedDescription
                     self.showError = true
                     self.isLoading = false
-                    if let lastIndex = self.messages.indices.last,
-                       self.messages[lastIndex].isStreaming {
-                        self.messages.remove(at: lastIndex)
-                    }
                 }
             }
         )
@@ -113,10 +104,10 @@ final class ChatViewModel {
 
     private func handleToolCalls() async {
         // Build assistant content blocks for the API
-        if !currentStreamText.isEmpty {
+        if !responseText.isEmpty {
             assistantContentBlocks.append([
                 "type": "text",
-                "text": currentStreamText
+                "text": responseText
             ])
         }
 
@@ -137,14 +128,7 @@ final class ChatViewModel {
 
         // Reset for next round
         pendingToolCalls = []
-        currentStreamText = ""
-
-        // Update the streaming message
-        if let lastIndex = messages.indices.last,
-           messages[lastIndex].role == .assistant {
-            messages[lastIndex].content = ""
-            messages[lastIndex].isStreaming = true
-        }
+        responseText = ""
 
         let historyForAPI = conversationHistory
         let assistantBlocks = assistantContentBlocks
@@ -160,11 +144,7 @@ final class ChatViewModel {
             onText: { [weak self] text in
                 Task { @MainActor in
                     guard let self else { return }
-                    self.currentStreamText += text
-                    if let lastIndex = self.messages.indices.last,
-                       self.messages[lastIndex].role == .assistant {
-                        self.messages[lastIndex].content = self.currentStreamText
-                    }
+                    self.responseText += text
                 }
             },
             onToolUse: { [weak self] id, name, inputJSON in
@@ -189,10 +169,6 @@ final class ChatViewModel {
                     self.errorMessage = error.localizedDescription
                     self.showError = true
                     self.isLoading = false
-                    if let lastIndex = self.messages.indices.last,
-                       self.messages[lastIndex].isStreaming {
-                        self.messages[lastIndex].isStreaming = false
-                    }
                 }
             }
         )
@@ -201,19 +177,14 @@ final class ChatViewModel {
     // MARK: - Finalize
 
     private func finalizeResponse() {
-        if let lastIndex = messages.indices.last,
-           messages[lastIndex].role == .assistant {
-            messages[lastIndex].isStreaming = false
-            let finalContent = messages[lastIndex].content
-            if !finalContent.isEmpty {
-                conversationHistory.append(ChatMessage(role: .assistant, content: finalContent))
-                // Notify the user if the app is in the background
-                NotificationManager.shared.sendResponseNotification(responseText: finalContent)
-
-            } else {
-                messages.remove(at: lastIndex)
-            }
+        if !responseText.isEmpty {
+            let assistantMessage = ChatMessage(role: .assistant, content: responseText)
+            messages.append(assistantMessage)
+            conversationHistory.append(assistantMessage)
+            // Notify the user if the app is in the background
+            NotificationManager.shared.sendResponseNotification(responseText: responseText)
         }
+        responseText = ""
         isLoading = false
     }
 
@@ -231,9 +202,7 @@ final class ChatViewModel {
 
     func retryLastMessage() {
         // Remove the last assistant message if any
-        if let lastIndex = messages.indices.last, messages[lastIndex].role == .assistant {
-            messages.remove(at: lastIndex)
-        }
+        messages.removeAll { $0.role == .assistant }
         if let lastHistIndex = conversationHistory.indices.last, conversationHistory[lastHistIndex].role == .assistant {
             conversationHistory.remove(at: lastHistIndex)
         }
@@ -241,10 +210,7 @@ final class ChatViewModel {
         guard !conversationHistory.isEmpty else { return }
 
         isLoading = true
-        let assistantMessage = ChatMessage(role: .assistant, content: "", isStreaming: true)
-        messages.append(assistantMessage)
-
-        currentStreamText = ""
+        responseText = ""
         pendingToolCalls = []
         assistantContentBlocks = []
 

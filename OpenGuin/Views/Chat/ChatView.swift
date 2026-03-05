@@ -68,18 +68,13 @@ struct ChatView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 12) {
-                    ForEach(viewModel.messages.filter { !($0.content.isEmpty && $0.isStreaming) }) { message in
+                    ForEach(viewModel.messages) { message in
                         MessageBubbleView(message: message)
                             .id(message.id)
                             .transition(.asymmetric(
                                 insertion: .move(edge: .bottom).combined(with: .opacity),
                                 removal: .opacity
                             ))
-                    }
-
-                    if let last = viewModel.messages.last, last.isStreaming && last.content.isEmpty {
-                        TypingIndicatorView()
-                            .id("typing")
                     }
                 }
                 .padding(.horizontal, 16)
@@ -91,46 +86,6 @@ struct ChatView: View {
                 withAnimation(.smooth) {
                     proxy.scrollTo(viewModel.messages.last?.id, anchor: .bottom)
                 }
-            }
-            .onChange(of: viewModel.messages.last?.content) {
-                proxy.scrollTo(viewModel.messages.last?.id, anchor: .bottom)
-            }
-        }
-    }
-}
-
-// MARK: - Typing Indicator
-
-struct TypingIndicatorView: View {
-    @State private var phase: CGFloat = 0
-
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            // Match the assistant avatar from MessageBubbleView
-            Image(systemName: "bird")
-                .font(.caption)
-                .foregroundStyle(.primary)
-                .frame(width: 28, height: 28)
-                .glassEffect(GlassEffect.regular, in: .circle)
-
-            HStack(spacing: 6) {
-                ForEach(0..<3) { i in
-                    Circle()
-                        .fill(.primary.opacity(0.5))
-                        .frame(width: 8, height: 8)
-                        .offset(y: sin(phase + Double(i) * 0.8) * 4)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 18))
-
-            Spacer(minLength: 60)
-        }
-        .padding(.horizontal, 4)
-        .onAppear {
-            withAnimation(.linear(duration: 1.2).repeatForever(autoreverses: false)) {
-                phase = .pi * 2
             }
         }
     }
