@@ -325,7 +325,9 @@ final class LLMAPIService {
         var urlRequest = URLRequest(url: endpointURL)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        urlRequest.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+        if config.provider != .lmstudio {
+            urlRequest.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+        }
         urlRequest.httpBody = bodyData
 
         do {
