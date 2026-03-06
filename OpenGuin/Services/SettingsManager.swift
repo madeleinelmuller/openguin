@@ -12,6 +12,8 @@ final class SettingsManager {
     private let openaiKeyKey = "openai_api_key"
     private let customEndpointKey = "custom_endpoint"
     private let customModelNameKey = "custom_model_name"
+    private let anthropicCustomModelIDKey = "anthropic_custom_model_id"
+    private let openaiCustomModelIDKey = "openai_custom_model_id"
 
     // MARK: - Model Selection Keys
     private let anthropicModelKey = "anthropic_model"
@@ -48,6 +50,18 @@ final class SettingsManager {
     var customModelName: String {
         didSet {
             UserDefaults.standard.set(customModelName, forKey: customModelNameKey)
+        }
+    }
+
+    var anthropicCustomModelID: String {
+        didSet {
+            UserDefaults.standard.set(anthropicCustomModelID, forKey: anthropicCustomModelIDKey)
+        }
+    }
+
+    var openAICustomModelID: String {
+        didSet {
+            UserDefaults.standard.set(openAICustomModelID, forKey: openaiCustomModelIDKey)
         }
     }
 
@@ -101,17 +115,27 @@ final class SettingsManager {
     var currentLLMConfiguration: LLMConfiguration {
         let apiKey: String
         let modelId: String
+        let customModelName: String?
 
         switch selectedProvider {
         case .anthropic:
             apiKey = effectiveAPIKey
-            modelId = selectedAnthropicModel.rawValue
+            modelId = anthropicCustomModelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? selectedAnthropicModel.rawValue
+                : anthropicCustomModelID.trimmingCharacters(in: .whitespacesAndNewlines)
+            customModelName = nil
         case .openai:
             apiKey = openaiAPIKey
-            modelId = selectedOpenAIModel.rawValue
+            modelId = openAICustomModelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? selectedOpenAIModel.rawValue
+                : openAICustomModelID.trimmingCharacters(in: .whitespacesAndNewlines)
+            customModelName = nil
         case .lmstudio:
             apiKey = "lmstudio" // LMStudio doesn't need real auth; any non-empty value passes guard
-            modelId = customModelName.isEmpty ? "local-model" : customModelName
+            customModelName = self.customModelName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? nil
+                : self.customModelName.trimmingCharacters(in: .whitespacesAndNewlines)
+            modelId = customModelName ?? "local-model"
         }
 
         return LLMConfiguration(
@@ -119,7 +143,7 @@ final class SettingsManager {
             apiKey: apiKey,
             endpoint: customEndpoint.isEmpty ? nil : customEndpoint,
             modelId: modelId,
-            customModelName: customModelName.isEmpty ? nil : customModelName
+            customModelName: customModelName
         )
     }
 
@@ -140,6 +164,8 @@ final class SettingsManager {
         self.openaiAPIKey = UserDefaults.standard.string(forKey: openaiKeyKey) ?? ""
         self.customEndpoint = UserDefaults.standard.string(forKey: customEndpointKey) ?? ""
         self.customModelName = UserDefaults.standard.string(forKey: customModelNameKey) ?? ""
+        self.anthropicCustomModelID = UserDefaults.standard.string(forKey: anthropicCustomModelIDKey) ?? ""
+        self.openAICustomModelID = UserDefaults.standard.string(forKey: openaiCustomModelIDKey) ?? ""
 
         let anthropicModelRaw = UserDefaults.standard.string(forKey: anthropicModelKey) ?? AnthropicModel.sonnet46.rawValue
         self.selectedAnthropicModel = AnthropicModel(rawValue: anthropicModelRaw) ?? .sonnet46

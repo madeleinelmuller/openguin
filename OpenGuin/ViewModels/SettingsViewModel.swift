@@ -9,6 +9,8 @@ final class SettingsViewModel {
     var openaiKeyInput: String = ""
     var customEndpointInput: String = ""
     var customModelNameInput: String = ""
+    var anthropicCustomModelIDInput: String = ""
+    var openAICustomModelIDInput: String = ""
 
     // MARK: - UI State
     var isAnthropicKeyVisible: Bool = false
@@ -45,6 +47,16 @@ final class SettingsViewModel {
     var customModelName: String {
         get { settings.customModelName }
         set { settings.customModelName = newValue }
+    }
+
+    var anthropicCustomModelID: String {
+        get { settings.anthropicCustomModelID }
+        set { settings.anthropicCustomModelID = newValue }
+    }
+
+    var openAICustomModelID: String {
+        get { settings.openAICustomModelID }
+        set { settings.openAICustomModelID = newValue }
     }
 
     // MARK: - Other Settings
@@ -84,6 +96,8 @@ final class SettingsViewModel {
         anthropicKeyInput = settings.anthropicAPIKey
         openaiKeyInput = settings.openaiAPIKey
         customModelNameInput = settings.customModelName
+        anthropicCustomModelIDInput = settings.anthropicCustomModelID
+        openAICustomModelIDInput = settings.openAICustomModelID
 
         // For LMStudio: pre-populate the endpoint field with the default if none saved
         if settings.selectedProvider == .lmstudio && settings.customEndpoint.isEmpty {
@@ -97,10 +111,14 @@ final class SettingsViewModel {
         switch selectedProvider {
         case .anthropic:
             let trimmed = anthropicKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            let modelTrimmed = anthropicCustomModelIDInput.trimmingCharacters(in: .whitespacesAndNewlines)
             settings.anthropicAPIKey = trimmed
+            settings.anthropicCustomModelID = modelTrimmed
         case .openai:
             let trimmed = openaiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            let modelTrimmed = openAICustomModelIDInput.trimmingCharacters(in: .whitespacesAndNewlines)
             settings.openaiAPIKey = trimmed
+            settings.openAICustomModelID = modelTrimmed
         case .lmstudio:
             let endpointTrimmed = customEndpointInput.trimmingCharacters(in: .whitespacesAndNewlines)
             let modelTrimmed = customModelNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -119,10 +137,14 @@ final class SettingsViewModel {
         switch selectedProvider {
         case .anthropic:
             settings.anthropicAPIKey = ""
+            settings.anthropicCustomModelID = ""
             anthropicKeyInput = ""
+            anthropicCustomModelIDInput = ""
         case .openai:
             settings.openaiAPIKey = ""
+            settings.openAICustomModelID = ""
             openaiKeyInput = ""
+            openAICustomModelIDInput = ""
         case .lmstudio:
             settings.customEndpoint = ""
             settings.customModelName = ""
@@ -135,5 +157,13 @@ final class SettingsViewModel {
         if let url = selectedProvider.oauthURL {
             UIApplication.shared.open(url)
         }
+    }
+
+    func saveAnthropicCustomModelID() {
+        settings.anthropicCustomModelID = anthropicCustomModelIDInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    func saveOpenAICustomModelID() {
+        settings.openAICustomModelID = openAICustomModelIDInput.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

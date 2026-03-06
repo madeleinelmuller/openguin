@@ -3,6 +3,11 @@ import Foundation
 @MainActor
 final class LLMAPIService {
     private let options = LLMOptions()
+    private struct PendingOpenAIToolCall {
+        var id: String = ""
+        var name: String = ""
+        var arguments: String = ""
+    }
 
     struct APIError: LocalizedError {
         let message: String
@@ -23,8 +28,16 @@ final class LLMAPIService {
         case .anthropic:
             await sendAnthropicToolResults(config: config, messages: messages, assistantContent: assistantContent, toolResults: toolResults, onText: onText, onToolUse: onToolUse, onComplete: onComplete, onError: onError)
         case .openai, .lmstudio:
-            // OpenAI-compatible endpoints handle tool results differently
-            await streamOpenAIMessage(config: config, messages: messages, onText: onText, onToolUse: onToolUse, onComplete: onComplete, onError: onError)
+            await sendOpenAIToolResults(
+                config: config,
+                messages: messages,
+                assistantContent: assistantContent,
+                toolResults: toolResults,
+                onText: onText,
+                onToolUse: onToolUse,
+                onComplete: onComplete,
+                onError: onError
+            )
         }
     }
 
@@ -263,20 +276,7 @@ final class LLMAPIService {
         onComplete: @Sendable @escaping (String?) -> Void,
         onError: @Sendable @escaping (Error) -> Void
     ) async {
-        var apiMessages: [[String: Any]] = [
-            ["role": "system", "content": Self.buildSystemPrompt()]
-        ]
-
-        for msg in messages {
-            switch msg.role {
-            case .user:
-                apiMessages.append(["role": "user", "content": msg.content])
-            case .assistant:
-                apiMessages.append(["role": "assistant", "content": msg.content])
-            case .system:
-                continue
-            }
-        }
+        let apiMessages = buildOpenAIMessages(from: messages)
 
         var body: [String: Any] = [
             "model": config.effectiveModelName,
@@ -293,6 +293,86 @@ final class LLMAPIService {
         if config.provider == .openai || config.provider == .lmstudio {
             body["tools"] = buildOpenAITools()
         }
+
+        await performOpenAIStreamRequest(
+            config: config,
+            body: body,
+            onText: onText,
+            onToolUse: onToolUse,
+            onComplete: onComplete,
+            onError: onError
+        )
+    }
+
+    private func sendOpenAIToolResults(
+        config: LLMConfiguration,
+        messages: [ChatMessage],
+        assistantContent: [[String: Any]],
+        toolResults: [(id: String, content: String)],
+        onText: @Sendable @escaping (String) -> Void,
+        onToolUse: @Sendable @escaping (String, String, String) -> Void,
+        onComplete: @Sendable @escaping (String?) -> Void,
+        onError: @Sendable @escaping (Error) -> Void
+    ) async {
+        var apiMessages = buildOpenAIMessages(from: messages)
+
+        let assistantText = assistantContent
+            .filter { ($0["type"] as? String) == "text" }
+            .compactMap { $0["text"] as? String }
+            .joined()
+
+        let toolCalls: [[String: Any]] = assistantContent.compactMap { block in
+            guard (block["type"] as? String) == "tool_use",
+                  let id = block["id"] as? String,
+                  let name = block["name"] as? String
+            else {
+                return nil
+            }
+
+            let input = block["input"] as? [String: Any] ?? [:]
+            let argumentsData = try? JSONSerialization.data(withJSONObject: input)
+            let arguments = argumentsData.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+
+            return [
+                "id": id,
+                "type": "function",
+                "function": [
+                    "name": name,
+                    "arguments": arguments
+                ]
+            ]
+        }
+
+        if !assistantText.isEmpty || !toolCalls.isEmpty {
+            var assistantMessage: [String: Any] = [
+                "role": "assistant",
+                "content": assistantText.isEmpty ? NSNull() : assistantText
+            ]
+            if !toolCalls.isEmpty {
+                assistantMessage["tool_calls"] = toolCalls
+            }
+            apiMessages.append(assistantMessage)
+        }
+
+        for result in toolResults {
+            apiMessages.append([
+                "role": "tool",
+                "tool_call_id": result.id,
+                "content": result.content
+            ])
+        }
+
+        let body: [String: Any] = [
+            "model": config.effectiveModelName,
+            "messages": apiMessages,
+            "temperature": options.temperature,
+            "max_tokens": options.maxTokens,
+            "stream": true,
+            "top_p": options.topP,
+            "frequency_penalty": options.frequencyPenalty,
+            "presence_penalty": options.presencePenalty,
+            "tools": buildOpenAITools()
+        ]
 
         await performOpenAIStreamRequest(
             config: config,
@@ -350,9 +430,7 @@ final class LLMAPIService {
             }
 
             var didComplete = false
-            var pendingToolId = ""
-            var pendingToolName = ""
-            var pendingToolArgs = ""
+            var pendingToolCalls: [Int: PendingOpenAIToolCall] = [:]
 
             for try await line in bytes.lines {
                 guard line.hasPrefix("data: ") else { continue }
@@ -371,22 +449,26 @@ final class LLMAPIService {
                     }
 
                     // OpenAI streams tool calls incrementally: id+name in first chunk,
-                    // arguments across subsequent chunks
+                    // arguments across subsequent chunks, potentially interleaved.
                     if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
                         for toolCall in toolCalls {
+                            let index = toolCall["index"] as? Int ?? 0
+                            var pending = pendingToolCalls[index] ?? PendingOpenAIToolCall()
+
                             if let id = toolCall["id"] as? String {
-                                // New tool call starting — flush any pending one
-                                if !pendingToolId.isEmpty {
-                                    onToolUse(pendingToolId, pendingToolName, pendingToolArgs)
-                                }
-                                pendingToolId = id
-                                pendingToolName = (toolCall["function"] as? [String: Any])?["name"] as? String ?? ""
-                                pendingToolArgs = (toolCall["function"] as? [String: Any])?["arguments"] as? String ?? ""
-                            } else if let function = toolCall["function"] as? [String: Any],
-                                      let args = function["arguments"] as? String {
-                                // Continuation chunk — accumulate arguments
-                                pendingToolArgs += args
+                                pending.id = id
                             }
+
+                            if let function = toolCall["function"] as? [String: Any] {
+                                if let name = function["name"] as? String {
+                                    pending.name = name
+                                }
+                                if let args = function["arguments"] as? String {
+                                    pending.arguments += args
+                                }
+                            }
+
+                            pendingToolCalls[index] = pending
                         }
                     }
                 }
@@ -395,26 +477,50 @@ final class LLMAPIService {
                    let choice = choices.first,
                    let finishReason = choice["finish_reason"] as? String,
                    finishReason != "null" {
-                    // Flush any pending tool call before completing
-                    if !pendingToolId.isEmpty {
-                        onToolUse(pendingToolId, pendingToolName, pendingToolArgs)
-                        pendingToolId = ""
-                    }
+                    flushPendingToolCalls(pendingToolCalls, onToolUse: onToolUse)
+                    pendingToolCalls.removeAll()
                     didComplete = true
                     onComplete(finishReason)
                 }
             }
 
             if !didComplete {
-                // Flush any remaining pending tool call
-                if !pendingToolId.isEmpty {
-                    onToolUse(pendingToolId, pendingToolName, pendingToolArgs)
-                }
+                flushPendingToolCalls(pendingToolCalls, onToolUse: onToolUse)
                 onComplete(nil)
             }
 
         } catch {
             onError(error)
+        }
+    }
+
+    private func buildOpenAIMessages(from messages: [ChatMessage]) -> [[String: Any]] {
+        var apiMessages: [[String: Any]] = [
+            ["role": "system", "content": Self.buildSystemPrompt()]
+        ]
+
+        for msg in messages {
+            switch msg.role {
+            case .user:
+                apiMessages.append(["role": "user", "content": msg.content])
+            case .assistant:
+                apiMessages.append(["role": "assistant", "content": msg.content])
+            case .system:
+                continue
+            }
+        }
+
+        return apiMessages
+    }
+
+    private func flushPendingToolCalls(
+        _ pendingToolCalls: [Int: PendingOpenAIToolCall],
+        onToolUse: @Sendable (String, String, String) -> Void
+    ) {
+        for index in pendingToolCalls.keys.sorted() {
+            let pending = pendingToolCalls[index]!
+            guard !pending.id.isEmpty, !pending.name.isEmpty else { continue }
+            onToolUse(pending.id, pending.name, pending.arguments)
         }
     }
 

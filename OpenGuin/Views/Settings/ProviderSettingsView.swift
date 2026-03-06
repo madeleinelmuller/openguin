@@ -203,7 +203,9 @@ struct ProviderSettingsView: View {
                     .padding(.vertical, 10)
                     .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
 
-                    saveAndClearButtons(hasValue: !viewModel.anthropicKeyInput.isEmpty)
+                    saveAndClearButtons(
+                        hasValue: !viewModel.anthropicKeyInput.isEmpty || !viewModel.anthropicCustomModelIDInput.isEmpty
+                    )
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
@@ -278,7 +280,9 @@ struct ProviderSettingsView: View {
                     .padding(.vertical, 10)
                     .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
 
-                    saveAndClearButtons(hasValue: !viewModel.openaiKeyInput.isEmpty)
+                    saveAndClearButtons(
+                        hasValue: !viewModel.openaiKeyInput.isEmpty || !viewModel.openAICustomModelIDInput.isEmpty
+                    )
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
@@ -335,7 +339,9 @@ struct ProviderSettingsView: View {
                             .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
                     }
 
-                    saveAndClearButtons(hasValue: !viewModel.customEndpointInput.isEmpty)
+                    saveAndClearButtons(
+                        hasValue: !viewModel.customEndpointInput.isEmpty || !viewModel.customModelNameInput.isEmpty
+                    )
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
@@ -457,6 +463,31 @@ struct ProviderSettingsView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 16)
                 }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Custom model API identifier")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    TextField(
+                        viewModel.selectedAnthropicModel.rawValue,
+                        text: $viewModel.anthropicCustomModelIDInput
+                    )
+                    .font(.body.monospaced())
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 12))
+                    .onChange(of: viewModel.anthropicCustomModelIDInput) {
+                        viewModel.saveAnthropicCustomModelID()
+                    }
+
+                    Text("Leave blank to use the selected preset above.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
             .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
@@ -506,6 +537,31 @@ struct ProviderSettingsView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 16)
                 }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Custom model API identifier")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    TextField(
+                        viewModel.selectedOpenAIModel.rawValue,
+                        text: $viewModel.openAICustomModelIDInput
+                    )
+                    .font(.body.monospaced())
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 12))
+                    .onChange(of: viewModel.openAICustomModelIDInput) {
+                        viewModel.saveOpenAICustomModelID()
+                    }
+
+                    Text("Leave blank to use the selected preset above.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 16)
                 .padding(.bottom, 16)
             }
             .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 20))
