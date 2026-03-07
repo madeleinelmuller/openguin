@@ -23,6 +23,11 @@ struct ContentView: View {
                 selectedTab = .settings
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openChatFromNotification)) { _ in
+            withAnimation(.smooth) {
+                selectedTab = .chat
+            }
+        }
     }
 }
 

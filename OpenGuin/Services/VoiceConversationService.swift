@@ -15,6 +15,7 @@ final class VoiceConversationService: NSObject {
     private let audioEngine = AVAudioEngine()
     private let speechSynthesizer = AVSpeechSynthesizer()
     private let speechRecognizer = SFSpeechRecognizer(locale: Locale.current)
+    private let kittenTTS = KittenTTSService.shared
 
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
@@ -47,6 +48,9 @@ final class VoiceConversationService: NSObject {
         }
 
         if isSpeaking {
+            Task {
+                await kittenTTS.stopSpeaking()
+            }
             speechSynthesizer.stopSpeaking(at: .immediate)
         }
 
@@ -121,21 +125,39 @@ final class VoiceConversationService: NSObject {
         recognitionTask?.cancel()
         recognitionTask = nil
         isListening = false
+        transcriptPreview = ""
     }
 
     func speak(_ text: String, restartListeningAfterFinish: Bool, onFinalTranscript: @escaping (String) -> Void) {
-        let cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        var cleanText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        cleanText = cleanText.replacingOccurrences(of: "<think>", with: "")
+            .replacingOccurrences(of: "</think>", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanText.isEmpty else { return }
 
         stopListening()
         shouldResumeListeningAfterSpeech = restartListeningAfterFinish
         self.onFinalTranscript = onFinalTranscript
-
-        let utterance = AVSpeechUtterance(string: cleanText)
-        utterance.rate = 0.5
-        utterance.voice = AVSpeechSynthesisVoice(language: Locale.current.identifier)
-        speechSynthesizer.speak(utterance)
         isSpeaking = true
+
+        Task {
+            do {
+                try await kittenTTS.speak(cleanText) { [weak self] in
+                    Task { @MainActor in
+                        self?.handleSpeechFinished()
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = "Kitten voice failed, using system voice."
+                }
+
+                let utterance = AVSpeechUtterance(string: cleanText)
+                utterance.rate = 0.5
+                utterance.voice = AVSpeechSynthesisVoice(language: Locale.current.identifier)
+                speechSynthesizer.speak(utterance)
+            }
+        }
     }
 
     private func requestPermissionsIfNeeded() async -> Bool {
@@ -148,22 +170,28 @@ final class VoiceConversationService: NSObject {
         guard speechAuth else { return false }
 
         let micAuth = await withCheckedContinuation { continuation in
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            AVAudioApplication.requestRecordPermission { granted in
                 continuation.resume(returning: granted)
             }
         }
 
         return micAuth
     }
+
+    private func handleSpeechFinished() {
+        isSpeaking = false
+        guard shouldResumeListeningAfterSpeech, let onFinalTranscript else { return }
+        shouldResumeListeningAfterSpeech = false
+        Task {
+            await startListening(onFinalTranscript: onFinalTranscript)
+        }
+    }
 }
 
 extension VoiceConversationService: AVSpeechSynthesizerDelegate {
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
-            self.isSpeaking = false
-            guard self.shouldResumeListeningAfterSpeech, let onFinalTranscript = self.onFinalTranscript else { return }
-            self.shouldResumeListeningAfterSpeech = false
-            await self.startListening(onFinalTranscript: onFinalTranscript)
+            self.handleSpeechFinished()
         }
     }
 

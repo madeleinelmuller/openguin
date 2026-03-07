@@ -30,6 +30,7 @@ final class NotificationManager: NSObject, @preconcurrency UNUserNotificationCen
             let trimmed = responseText.trimmingCharacters(in: .whitespacesAndNewlines)
             content.body = trimmed.isEmpty ? "New message" : String(trimmed.prefix(160))
             content.sound = .default
+            content.userInfo = ["route": "chat"]
 
             let request = UNNotificationRequest(
                 identifier: UUID().uuidString,
@@ -42,19 +43,34 @@ final class NotificationManager: NSObject, @preconcurrency UNUserNotificationCen
     }
 
     /// Schedules a local notification for a future time.
-    func scheduleAgentTaskNotification(task: String, note: String?, at date: Date) async -> String {
+    func scheduleAgentTaskNotification(
+        task: String,
+        note: String?,
+        title: String?,
+        userMessage: String?,
+        at date: Date
+    ) async -> String {
         guard date > Date() else {
             return "[Error: Scheduled time must be in the future.]"
         }
 
         let content = UNMutableNotificationContent()
-        content.title = "Scheduled task"
-        if let note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            content.body = "\(task) — \(note)"
+        let trimmedTitle = title?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedUserMessage = userMessage?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNote = note?.trimmingCharacters(in: .whitespacesAndNewlines)
+        content.title = (trimmedTitle?.isEmpty == false ? trimmedTitle : "openguin") ?? "openguin"
+        if let trimmedUserMessage, !trimmedUserMessage.isEmpty {
+            content.body = trimmedUserMessage
+        } else if let trimmedNote, !trimmedNote.isEmpty {
+            content.body = "\(task) — \(trimmedNote)"
         } else {
             content.body = task
         }
         content.sound = .default
+        content.userInfo = [
+            "route": "chat",
+            "task": task
+        ]
 
         let dateComponents = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute, .second],
@@ -69,7 +85,7 @@ final class NotificationManager: NSObject, @preconcurrency UNUserNotificationCen
             let formatter = DateFormatter()
             formatter.dateStyle = .medium
             formatter.timeStyle = .short
-            return "Scheduled task '\(task)' for \(formatter.string(from: date)) (id: \(identifier))."
+            return "Scheduled reminder '\(task)' for \(formatter.string(from: date)) (id: \(identifier)). It will fire even if the app is closed."
         } catch {
             return "[Error: Failed to schedule task notification: \(error.localizedDescription)]"
         }
@@ -91,7 +107,7 @@ final class NotificationManager: NSObject, @preconcurrency UNUserNotificationCen
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        // User tapped the notification — just complete (app opens to chat)
+        NotificationCenter.default.post(name: .openChatFromNotification, object: response.notification.request.content.userInfo)
         completionHandler()
     }
 }

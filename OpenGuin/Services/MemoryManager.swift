@@ -46,7 +46,7 @@ actor MemoryManager {
             ## My Evolving Thoughts
             *(I'll update this section as I grow and reflect.)*
             """
-            try? content.write(to: soul, atomically: true, encoding: .utf8)
+            try? writeEncryptedString(content, to: soul)
         }
 
         let user = memoryRoot.appendingPathComponent("USER.md")
@@ -75,7 +75,7 @@ actor MemoryManager {
             ## Important Life Context
             *(To be discovered)*
             """
-            try? content.write(to: user, atomically: true, encoding: .utf8)
+            try? writeEncryptedString(content, to: user)
         }
 
         let memory = memoryRoot.appendingPathComponent("MEMORY.md")
@@ -97,7 +97,7 @@ actor MemoryManager {
             ## Our Relationship So Far
             - We just met. This is the beginning.
             """
-            try? content.write(to: memory, atomically: true, encoding: .utf8)
+            try? writeEncryptedString(content, to: memory)
         }
     }
 
@@ -180,13 +180,13 @@ actor MemoryManager {
         ],
         [
             "name": "schedule_task",
-            "description": "Schedule a task reminder for a specific future time. Use ISO-8601 datetime like '2026-01-15T14:30:00-05:00'.",
+            "description": "Schedule a local reminder or proactive check-in for a specific future time. Notifications still fire even if the app is closed. Use ISO-8601 datetime like '2026-01-15T14:30:00-05:00'.",
             "input_schema": [
                 "type": "object",
                 "properties": [
                     "task": [
                         "type": "string",
-                        "description": "What should happen at that time. This will be shown in the notification."
+                        "description": "Internal purpose of the reminder or follow-up."
                     ],
                     "time": [
                         "type": "string",
@@ -195,6 +195,14 @@ actor MemoryManager {
                     "note": [
                         "type": "string",
                         "description": "Optional extra context shown with the task."
+                    ],
+                    "title": [
+                        "type": "string",
+                        "description": "Optional short notification title shown to the user."
+                    ],
+                    "user_message": [
+                        "type": "string",
+                        "description": "Optional concise message written directly to the user. Use this for natural check-ins."
                     ]
                 ],
                 "required": ["task", "time"]
@@ -206,7 +214,7 @@ actor MemoryManager {
 
     func readFile(path: String) -> String {
         let url = resolvedURL(for: path)
-        guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+        guard let content = try? readDecryptedString(from: url) else {
             return "[Error: File not found at '\(path)']"
         }
         return content
@@ -219,7 +227,7 @@ actor MemoryManager {
             if !fileManager.fileExists(atPath: dir.path) {
                 try fileManager.createDirectory(at: dir, withIntermediateDirectories: true)
             }
-            try content.write(to: url, atomically: true, encoding: .utf8)
+            try writeEncryptedString(content, to: url)
             return "Successfully wrote to '\(path)'"
         } catch {
             return "[Error: Could not write to '\(path)': \(error.localizedDescription)]"
@@ -236,6 +244,10 @@ actor MemoryManager {
             return "[Error: Could not list directory at '\(path ?? "/")']"
         }
 
+        if items.isEmpty {
+            return "Directory is empty."
+        }
+
         var result = "Contents of '\(path ?? "/")':\n"
         for item in items.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
             let isDir = (try? item.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
@@ -243,7 +255,7 @@ actor MemoryManager {
             let relativePath = item.path.replacingOccurrences(of: memoryRoot.path + "/", with: "")
             result += "  \(icon) \(relativePath)\(isDir ? "/" : "")\n"
         }
-        return result.isEmpty ? "Directory is empty." : result
+        return result
     }
 
     func createDirectory(path: String) -> String {
@@ -294,7 +306,7 @@ actor MemoryManager {
             let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .contentModificationDateKey])
             if values?.isDirectory == true { continue }
             let relativePath = url.path.replacingOccurrences(of: memoryRoot.path + "/", with: "")
-            let content = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+            let content = (try? readDecryptedString(from: url)) ?? ""
             let modified = values?.contentModificationDate ?? Date()
             files.append(MemoryFile(path: relativePath, content: content, lastModified: modified))
         }
@@ -324,7 +336,7 @@ actor MemoryManager {
             if isDir {
                 subdirs.append(buildDirectory(at: item, relativePath: childPath))
             } else {
-                let content = (try? String(contentsOf: item, encoding: .utf8)) ?? ""
+                let content = (try? readDecryptedString(from: item)) ?? ""
                 let modified = (try? item.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate ?? Date()
                 files.append(MemoryFile(path: childPath, content: content, lastModified: modified))
             }
@@ -372,7 +384,17 @@ actor MemoryManager {
                 return "[Error: Invalid time format. Use ISO-8601 like 2026-01-15T14:30:00-05:00]"
             }
             let note = input["note"] as? String
-            return await NotificationManager.shared.scheduleAgentTaskNotification(task: task, note: note, at: date)
+            let title = input["title"] as? String
+            let userMessage = input["user_message"] as? String
+            let result = await NotificationManager.shared.scheduleAgentTaskNotification(
+                task: task,
+                note: note,
+                title: title,
+                userMessage: userMessage,
+                at: date
+            )
+            await appendReminderLog(task: task, note: note, userMessage: userMessage, scheduledFor: date)
+            return result
         default:
             return "[Error: Unknown tool '\(name)']"
         }
@@ -383,6 +405,51 @@ actor MemoryManager {
     private func resolvedURL(for path: String) -> URL {
         let cleaned = path.hasPrefix("/") ? String(path.dropFirst()) : path
         return memoryRoot.appendingPathComponent(cleaned)
+    }
+
+    private func writeEncryptedString(_ content: String, to url: URL) throws {
+        let plaintext = Data(content.utf8)
+        let ciphertext = try SecurityManager.shared.encrypt(plaintext)
+        try ciphertext.write(to: url, options: .atomic)
+    }
+
+    private func readDecryptedString(from url: URL) throws -> String {
+        let data = try Data(contentsOf: url)
+
+        if let decrypted = try? SecurityManager.shared.decrypt(data),
+           let string = String(data: decrypted, encoding: .utf8) {
+            return string
+        }
+
+        if let plaintext = String(data: data, encoding: .utf8) {
+            // Migrate older plaintext files into encrypted form on first read.
+            try? writeEncryptedString(plaintext, to: url)
+            return plaintext
+        }
+
+        throw SecurityManagerError.decryptionFailed
+    }
+
+    private func appendReminderLog(task: String, note: String?, userMessage: String?, scheduledFor date: Date) async {
+        let logURL = resolvedURL(for: "REMINDERS.md")
+        let existing = (try? readDecryptedString(from: logURL)) ?? """
+        # REMINDERS
+
+        A running log of reminders and proactive check-ins I have scheduled for the user.
+        """
+
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+
+        var entry = "\n- \(formatter.string(from: date)) — \(task)"
+        if let note, !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            entry += " | note: \(note.trimmingCharacters(in: .whitespacesAndNewlines))"
+        }
+        if let userMessage, !userMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            entry += " | user_message: \(userMessage.trimmingCharacters(in: .whitespacesAndNewlines))"
+        }
+
+        try? writeEncryptedString(existing + entry, to: logURL)
     }
 
     nonisolated private static func parseISO8601Date(from value: String) -> Date? {

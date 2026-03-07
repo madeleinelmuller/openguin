@@ -8,8 +8,8 @@ final class SettingsManager {
 
     // MARK: - Provider Settings Keys
     private let providerKey = "llm_provider"
-    private let anthropicKeyKey = "anthropic_api_key"
-    private let openaiKeyKey = "openai_api_key"
+    private let legacyAnthropicKeyKey = "anthropic_api_key"
+    private let legacyOpenAIKeyKey = "openai_api_key"
     private let customEndpointKey = "custom_endpoint"
     private let customModelNameKey = "custom_model_name"
     private let anthropicCustomModelIDKey = "anthropic_custom_model_id"
@@ -31,13 +31,13 @@ final class SettingsManager {
 
     var anthropicAPIKey: String {
         didSet {
-            UserDefaults.standard.set(anthropicAPIKey, forKey: anthropicKeyKey)
+            try? SecurityManager.shared.saveSecret(anthropicAPIKey, account: Self.anthropicKeyAccount)
         }
     }
 
     var openaiAPIKey: String {
         didSet {
-            UserDefaults.standard.set(openaiAPIKey, forKey: openaiKeyKey)
+            try? SecurityManager.shared.saveSecret(openaiAPIKey, account: Self.openAIKeyAccount)
         }
     }
 
@@ -152,6 +152,9 @@ final class SettingsManager {
         ProcessInfo.processInfo.environment["API_KEY"] ?? ""
     }()
 
+    nonisolated private static let anthropicKeyAccount = "anthropic_api_key"
+    nonisolated private static let openAIKeyAccount = "openai_api_key"
+
     private init() {
         let providerRaw = UserDefaults.standard.string(forKey: providerKey) ?? LLMProvider.anthropic.rawValue
         if providerRaw == "openaiCompatible" {
@@ -160,8 +163,14 @@ final class SettingsManager {
             self.selectedProvider = LLMProvider(rawValue: providerRaw) ?? .anthropic
         }
 
-        self.anthropicAPIKey = UserDefaults.standard.string(forKey: anthropicKeyKey) ?? ""
-        self.openaiAPIKey = UserDefaults.standard.string(forKey: openaiKeyKey) ?? ""
+        self.anthropicAPIKey = Self.loadSecret(
+            account: Self.anthropicKeyAccount,
+            legacyUserDefaultsKey: legacyAnthropicKeyKey
+        )
+        self.openaiAPIKey = Self.loadSecret(
+            account: Self.openAIKeyAccount,
+            legacyUserDefaultsKey: legacyOpenAIKeyKey
+        )
         self.customEndpoint = UserDefaults.standard.string(forKey: customEndpointKey) ?? ""
         self.customModelName = UserDefaults.standard.string(forKey: customModelNameKey) ?? ""
         self.anthropicCustomModelID = UserDefaults.standard.string(forKey: anthropicCustomModelIDKey) ?? ""
@@ -174,5 +183,18 @@ final class SettingsManager {
         self.selectedOpenAIModel = OpenAIModel(rawValue: openaiModelRaw) ?? .gpt4turbo
 
         self.hapticFeedbackEnabled = UserDefaults.standard.object(forKey: hapticKey) as? Bool ?? true
+    }
+
+    nonisolated private static func loadSecret(account: String, legacyUserDefaultsKey: String) -> String {
+        if let keychainValue = try? SecurityManager.shared.loadSecret(account: account) {
+            return keychainValue
+        }
+
+        let legacyValue = UserDefaults.standard.string(forKey: legacyUserDefaultsKey) ?? ""
+        guard !legacyValue.isEmpty else { return "" }
+
+        try? SecurityManager.shared.saveSecret(legacyValue, account: account)
+        UserDefaults.standard.removeObject(forKey: legacyUserDefaultsKey)
+        return legacyValue
     }
 }

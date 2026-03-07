@@ -1,32 +1,54 @@
 # Xcode
 build/
+Build/
 DerivedData/
+*.xcuserstate
 *.xcuserdata/
 *.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 xcuserdata/
+.Xcode.env
+
+# Xcode build artifacts
+.build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.app
+
+# Build output
+Index.noindex/
+CompilationCache.noindex/
+ModuleCache.noindex/
+SDKStatCaches.noindex/
 
 # Swift Package Manager
-.build/
 Packages/
 Package.resolved
 *.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
 
 # CocoaPods
 Pods/
+Podfile.lock
 
-# OS files
+# OS-specific files
 .DS_Store
+.AppleDouble
+.LSOverride
 *.swp
 *~.nib
 *.pbxuser
 *.perspective
 *.perspectivev3
 
-# App packaging
-*.ipa
-*.dSYM.zip
-*.dSYM
+# IDE
+.idea/
+.vscode/
+*.swiftpm
+
+# Environment
+.env
+.env.local
 
 # Playgrounds
 timeline.xctimeline

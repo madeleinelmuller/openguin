@@ -203,6 +203,13 @@ struct ProviderSettingsView: View {
                     .padding(.vertical, 10)
                     .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
 
+                    providerModelIDField(
+                        title: "Model API Identifier",
+                        placeholder: "claude-sonnet-4-5",
+                        text: $viewModel.anthropicCustomModelIDInput,
+                        docsURL: URL(string: "https://docs.anthropic.com/en/docs/models-overview")
+                    )
+
                     saveAndClearButtons(
                         hasValue: !viewModel.anthropicKeyInput.isEmpty || !viewModel.anthropicCustomModelIDInput.isEmpty
                     )
@@ -280,6 +287,13 @@ struct ProviderSettingsView: View {
                     .padding(.vertical, 10)
                     .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
 
+                    providerModelIDField(
+                        title: "Model API Identifier",
+                        placeholder: "gpt-4.1",
+                        text: $viewModel.openAICustomModelIDInput,
+                        docsURL: URL(string: "https://platform.openai.com/docs/models")
+                    )
+
                     saveAndClearButtons(
                         hasValue: !viewModel.openaiKeyInput.isEmpty || !viewModel.openAICustomModelIDInput.isEmpty
                     )
@@ -314,7 +328,7 @@ struct ProviderSettingsView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
 
-                        TextField(LLMProvider.lmstudio.defaultEndpoint,
+                        TextField("http://localhost:1234",
                                   text: $viewModel.customEndpointInput)
                             .font(.body.monospaced())
                             .textInputAutocapitalization(.never)
@@ -355,7 +369,7 @@ struct ProviderSettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                    Text("Default endpoint: \(LLMProvider.lmstudio.defaultEndpoint)")
+                    Text("Enter just the host and port — /v1/chat/completions is added automatically.")
                         .font(.caption.monospaced())
                         .foregroundStyle(.tertiary)
                         .lineLimit(2)
@@ -410,13 +424,33 @@ struct ProviderSettingsView: View {
 
     @ViewBuilder
     private var modelSelectionView: some View {
-        switch viewModel.selectedProvider {
-        case .anthropic:
-            anthropicModelSelectionView
-        case .openai:
-            openaiModelSelectionView
-        default:
-            EmptyView()
+        EmptyView()
+    }
+
+    private func providerModelIDField(
+        title: String,
+        placeholder: String,
+        text: Binding<String>,
+        docsURL: URL?
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            TextField(placeholder, text: text)
+                .font(.body.monospaced())
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
+
+            if let docsURL {
+                Link("Open provider model list", destination: docsURL)
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+            }
         }
     }
 

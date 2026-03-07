@@ -137,18 +137,9 @@ extension LLMConfiguration {
     fileprivate static func normalizeLMStudioEndpoint(_ endpoint: String) -> String {
         let trimmed = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
         guard var components = URLComponents(string: trimmed) else { return trimmed }
-
-        let path = components.path.trimmingCharacters(in: .whitespacesAndNewlines)
-        if path.isEmpty || path == "/" {
-            components.path = "/v1/chat/completions"
-            return components.string ?? trimmed
-        }
-
-        if path.hasSuffix("/completions") {
-            return components.string ?? trimmed
-        }
-
-        components.path = path.hasSuffix("/") ? "\(path)completions" : "\(path)/completions"
+        // Always use the standard path — user only needs to enter host:port
+        components.path = "/v1/chat/completions"
+        components.query = nil
         return components.string ?? trimmed
     }
 }

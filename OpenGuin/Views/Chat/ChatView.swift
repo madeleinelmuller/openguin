@@ -2,12 +2,17 @@ import SwiftUI
 
 struct ChatView: View {
     @State private var viewModel = ChatViewModel()
+    @State private var voiceService = VoiceConversationService.shared
+    @State private var kittenTTS = KittenTTSService.shared
     @State private var showNewChatConfirm = false
 
     var body: some View {
         NavigationStack {
             ZStack {
                 RainbowBlobsBackground()
+                KittenTTSHostView(webView: kittenTTS.webView)
+                    .frame(width: 0, height: 0)
+                    .allowsHitTesting(false)
 
                 VStack(spacing: 0) {
                     if viewModel.messages.isEmpty && !viewModel.isLoading {
@@ -19,12 +24,38 @@ struct ChatView: View {
                     ChatInputView(
                         text: $viewModel.inputText,
                         isLoading: viewModel.isLoading,
-                        onSend: { viewModel.sendMessage() }
+                        isListening: voiceService.isListening,
+                        isSpeaking: voiceService.isSpeaking || kittenTTS.isSpeaking,
+                        transcriptPreview: voiceService.transcriptPreview,
+                        onSend: { viewModel.sendMessage() },
+                        onToggleVoice: { toggleVoiceMode() }
                     )
                 }
             }
             .navigationTitle("Chat")
             .toolbarTitleDisplayMode(.inline)
+            .onChange(of: viewModel.lastCompletedAssistantResponse) {
+                guard viewModel.shouldSpeakNextAssistantReply,
+                      let response = viewModel.lastCompletedAssistantResponse
+                else { return }
+
+                viewModel.shouldSpeakNextAssistantReply = false
+                voiceService.speak(response, restartListeningAfterFinish: true) { transcript in
+                    viewModel.sendVoiceMessage(transcript)
+                }
+            }
+            .onChange(of: voiceService.errorMessage) {
+                if let message = voiceService.errorMessage, !message.isEmpty {
+                    viewModel.errorMessage = message
+                    viewModel.showError = true
+                }
+            }
+            .onChange(of: kittenTTS.errorMessage) {
+                if let message = kittenTTS.errorMessage, !message.isEmpty {
+                    viewModel.errorMessage = message
+                    viewModel.showError = true
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -99,12 +130,19 @@ struct ChatView: View {
             }
         }
     }
+
+    private func toggleVoiceMode() {
+        voiceService.toggleListening { transcript in
+            viewModel.sendVoiceMessage(transcript)
+        }
+    }
 }
 
 // MARK: - Notification Name
 
 extension Notification.Name {
     static let switchToSettings = Notification.Name("switchToSettings")
+    static let openChatFromNotification = Notification.Name("openChatFromNotification")
 }
 
 #Preview {

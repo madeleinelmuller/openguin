@@ -1,69 +1,104 @@
 import SwiftUI
 
-/// Full-screen animated rainbow blob background.
-/// Seven luminous, blurred ellipses at the bottom of the screen drift
-/// with independent sinusoidal motion, creating a living glow.
 struct RainbowBlobsBackground: View {
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { context in
-            RainbowBlobsLayer(time: context.date.timeIntervalSinceReferenceDate)
+        TimelineView(.animation(minimumInterval: 1.0 / 20.0)) { context in
+            AuroraLayer(time: context.date.timeIntervalSinceReferenceDate)
         }
         .ignoresSafeArea()
     }
 }
 
-// MARK: - Blob Layer
-
-private struct RainbowBlobsLayer: View {
+private struct AuroraLayer: View {
     let time: Double
 
     private struct BlobSpec {
         let color: Color
         let width: CGFloat
         let height: CGFloat
-        /// Horizontal base position as a fraction of screen width
         let xFraction: CGFloat
-        /// Vertical base position as a fraction of screen height
         let yFraction: CGFloat
-        /// Horizontal oscillation amplitude in points
-        let xAmplitude: CGFloat
-        /// Vertical oscillation amplitude in points
-        let yAmplitude: CGFloat
+        let xAmp: CGFloat
+        let yAmp: CGFloat
         let speed: Double
         let phase: Double
+        let opacity: Double
     }
 
-    // Seven rainbow blobs — each sits near the bottom with its own drift speed/phase
+    // Full rainbow spectrum with all colors evenly distributed
+    // yFraction ≥ 1.0 places the blob center at/below the screen bottom,
+    // so the gradient peak is at the screen edge and dims going upward.
     private let blobs: [BlobSpec] = [
-        BlobSpec(color: .red,    width: 280, height: 200, xFraction: 0.05, yFraction: 0.84, xAmplitude: 40, yAmplitude: 22, speed: 0.47, phase: 0.00),
-        BlobSpec(color: .orange, width: 250, height: 180, xFraction: 0.23, yFraction: 0.90, xAmplitude: 32, yAmplitude: 28, speed: 0.60, phase: 1.05),
-        BlobSpec(color: .yellow, width: 230, height: 170, xFraction: 0.41, yFraction: 0.86, xAmplitude: 36, yAmplitude: 18, speed: 0.52, phase: 2.10),
-        BlobSpec(color: .green,  width: 260, height: 190, xFraction: 0.58, yFraction: 0.92, xAmplitude: 28, yAmplitude: 25, speed: 0.67, phase: 3.15),
-        BlobSpec(color: .cyan,   width: 240, height: 175, xFraction: 0.74, yFraction: 0.87, xAmplitude: 34, yAmplitude: 20, speed: 0.55, phase: 4.20),
-        BlobSpec(color: .blue,   width: 255, height: 185, xFraction: 0.90, yFraction: 0.94, xAmplitude: 26, yAmplitude: 30, speed: 0.43, phase: 5.25),
-        BlobSpec(color: .purple, width: 290, height: 210, xFraction: 0.50, yFraction: 0.98, xAmplitude: 45, yAmplitude: 16, speed: 0.71, phase: 0.78),
+        // Red
+        BlobSpec(color: Color(red: 1.000, green: 0.000, blue: 0.000), width: 220, height: 900, xFraction: 0.05, yFraction: 1.00, xAmp: 35, yAmp: 12, speed: 0.19, phase: 0.0, opacity: 0.78),
+        // Orange
+        BlobSpec(color: Color(red: 1.000, green: 0.500, blue: 0.000), width: 240, height: 920, xFraction: 0.18, yFraction: 1.00, xAmp: 42, yAmp: 14, speed: 0.20, phase: 0.9, opacity: 0.88),
+        // Yellow
+        BlobSpec(color: Color(red: 1.000, green: 1.000, blue: 0.000), width: 235, height: 910, xFraction: 0.31, yFraction: 1.00, xAmp: 38, yAmp: 13, speed: 0.18, phase: 1.8, opacity: 0.82),
+        // Lime
+        BlobSpec(color: Color(red: 0.500, green: 1.000, blue: 0.000), width: 205, height: 870, xFraction: 0.44, yFraction: 1.00, xAmp: 36, yAmp: 11, speed: 0.21, phase: 2.7, opacity: 0.72),
+        // Green
+        BlobSpec(color: Color(red: 0.000, green: 1.000, blue: 0.000), width: 215, height: 880, xFraction: 0.57, yFraction: 1.00, xAmp: 40, yAmp: 13, speed: 0.17, phase: 3.6, opacity: 0.68),
+        // Cyan
+        BlobSpec(color: Color(red: 0.000, green: 1.000, blue: 1.000), width: 225, height: 895, xFraction: 0.70, yFraction: 1.00, xAmp: 34, yAmp: 12, speed: 0.22, phase: 4.5, opacity: 0.75),
+        // Blue
+        BlobSpec(color: Color(red: 0.000, green: 0.000, blue: 1.000), width: 210, height: 875, xFraction: 0.83, yFraction: 1.00, xAmp: 38, yAmp: 13, speed: 0.19, phase: 5.4, opacity: 0.80),
+        // Indigo
+        BlobSpec(color: Color(red: 0.290, green: 0.000, blue: 0.510), width: 200, height: 860, xFraction: 0.96, yFraction: 1.00, xAmp: 32, yAmp: 11, speed: 0.20, phase: 6.3, opacity: 0.70),
+        // Violet
+        BlobSpec(color: Color(red: 0.933, green: 0.510, blue: 0.933), width: 190, height: 850, xFraction: 0.11, yFraction: 1.00, xAmp: 36, yAmp: 12, speed: 0.18, phase: 1.2, opacity: 0.65),
+        // Magenta
+        BlobSpec(color: Color(red: 1.000, green: 0.000, blue: 1.000), width: 215, height: 880, xFraction: 0.25, yFraction: 1.00, xAmp: 39, yAmp: 13, speed: 0.21, phase: 2.4, opacity: 0.76),
+        // Pink
+        BlobSpec(color: Color(red: 1.000, green: 0.753, blue: 0.796), width: 205, height: 870, xFraction: 0.39, yFraction: 1.00, xAmp: 35, yAmp: 11, speed: 0.19, phase: 3.6, opacity: 0.62),
+        // Teal
+        BlobSpec(color: Color(red: 0.000, green: 0.502, blue: 0.502), width: 200, height: 860, xFraction: 0.53, yFraction: 1.00, xAmp: 37, yAmp: 12, speed: 0.20, phase: 4.8, opacity: 0.64),
     ]
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // All blobs rendered together then heavily blurred
+                Color(red: 0.04, green: 0.03, blue: 0.04)
+
                 ZStack {
                     ForEach(blobs.indices, id: \.self) { i in
-                        let blob = blobs[i]
-                        let x = geo.size.width * blob.xFraction
-                            + sin(time * blob.speed + blob.phase) * Double(blob.xAmplitude)
-                        let y = geo.size.height * blob.yFraction
-                            + cos(time * blob.speed * 0.73 + blob.phase) * Double(blob.yAmplitude)
+                        let b = blobs[i]
+                        let x = geo.size.width  * b.xFraction + sin(time * b.speed + b.phase) * b.xAmp
+                        let y = geo.size.height * b.yFraction + cos(time * b.speed * 0.6 + b.phase) * b.yAmp
 
-                        Ellipse()
-                            .fill(blob.color.opacity(0.90))
-                            .frame(width: blob.width, height: blob.height)
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        b.color.opacity(0.0),
+                                        b.color.opacity(b.opacity)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: b.width, height: b.height)
+                            .rotationEffect(.degrees(sin(time * b.speed + b.phase) * 5))
                             .position(x: x, y: y)
+                            .blendMode(.screen)
                     }
                 }
-                // Heavy gaussian blur turns hard-edged blobs into soft glowing light
-                .blur(radius: 72)
+                .drawingGroup()
+                .blur(radius: 110)
+                // Fully present at bottom 2/3, gone by top third
+                .mask(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear,              location: 0.00),
+                            .init(color: .clear,              location: 0.22),
+                            .init(color: .black.opacity(0.55), location: 0.38),
+                            .init(color: .black,              location: 0.52),
+                            .init(color: .black,              location: 1.00)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
             }
         }
     }
@@ -71,5 +106,4 @@ private struct RainbowBlobsLayer: View {
 
 #Preview {
     RainbowBlobsBackground()
-        .background(.black)
 }

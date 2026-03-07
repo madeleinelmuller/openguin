@@ -10,6 +10,8 @@ final class ChatViewModel {
     var errorMessage: String?
     var showError: Bool = false
     var isInitialMemoryLoad: Bool = true
+    var lastCompletedAssistantResponse: String?
+    var shouldSpeakNextAssistantReply: Bool = false
 
     /// The assistant message currently being streamed. Visible to the view
     /// so it can drive scroll-to-bottom during streaming.
@@ -28,7 +30,15 @@ final class ChatViewModel {
     // MARK: - Send Message
 
     func sendMessage() {
-        let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        sendMessage(textOverride: nil, asVoiceRoundTrip: false)
+    }
+
+    func sendVoiceMessage(_ transcript: String) {
+        sendMessage(textOverride: transcript, asVoiceRoundTrip: true)
+    }
+
+    private func sendMessage(textOverride: String?, asVoiceRoundTrip: Bool) {
+        let text = (textOverride ?? inputText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
         if isInitialMemoryLoad {
@@ -46,6 +56,8 @@ final class ChatViewModel {
         inputText = ""
         isLoading = true
         errorMessage = nil
+        lastCompletedAssistantResponse = nil
+        shouldSpeakNextAssistantReply = asVoiceRoundTrip
 
         pendingToolCalls = []
         assistantContentBlocks = []
@@ -72,7 +84,8 @@ final class ChatViewModel {
             messages: msgs,
             onText: { [weak self] text in
                 Task { @MainActor in
-                    self?.currentAssistantMessage?.content += text
+                    let filtered = Self.filterThinkTags(text)
+                    self?.currentAssistantMessage?.content += filtered
                 }
             },
             onToolUse: { [weak self] id, name, inputJSON in
@@ -154,7 +167,8 @@ final class ChatViewModel {
             toolResults: toolResults,
             onText: { [weak self] text in
                 Task { @MainActor in
-                    self?.currentAssistantMessage?.content += text
+                    let filtered = Self.filterThinkTags(text)
+                    self?.currentAssistantMessage?.content += filtered
                 }
             },
             onToolUse: { [weak self] id, name, inputJSON in
@@ -195,6 +209,7 @@ final class ChatViewModel {
                 messages.removeAll { $0.id == msg.id }
             } else {
                 conversationHistory.append(msg)
+                lastCompletedAssistantResponse = msg.content
                 NotificationManager.shared.sendResponseNotification(responseText: msg.content)
             }
         }
@@ -211,6 +226,8 @@ final class ChatViewModel {
         isInitialMemoryLoad = true
         isLoading = false
         errorMessage = nil
+        lastCompletedAssistantResponse = nil
+        shouldSpeakNextAssistantReply = false
     }
 
     // MARK: - Retry
@@ -228,8 +245,9 @@ final class ChatViewModel {
             conversationHistory.remove(at: lastHistIndex)
         }
 
-        // Remove displayed assistant messages
-        messages.removeAll { $0.role == .assistant }
+        if let lastAssistantIndex = messages.lastIndex(where: { $0.role == .assistant }) {
+            messages.remove(at: lastAssistantIndex)
+        }
 
         guard !conversationHistory.isEmpty else { return }
 
@@ -253,5 +271,10 @@ final class ChatViewModel {
             return [:]
         }
         return parsed
+    }
+
+    private static func filterThinkTags(_ text: String) -> String {
+        text.replacingOccurrences(of: "<think>", with: "")
+            .replacingOccurrences(of: "</think>", with: "")
     }
 }
