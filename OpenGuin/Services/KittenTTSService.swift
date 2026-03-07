@@ -8,11 +8,14 @@ import WebKit
 final class KittenTTSService: NSObject {
     static let shared = KittenTTSService()
 
+    // Official Kitten TTS voices (nano-0.8-int8 model)
+    static let availableVoices = ["Bella", "Jasper", "Luna", "Bruno", "Rosie", "Hugo", "Kiki", "Leo"]
+
     var isPreparing = false
     var isReady = false
     var isSpeaking = false
     var errorMessage: String?
-    var selectedVoiceID = "expr-voice-2-m"
+    var selectedVoiceID = "Bella"
 
     let webView: WKWebView
 
