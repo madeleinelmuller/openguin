@@ -150,9 +150,11 @@ final class ChatViewModel {
             toolResults.append((id: tool.id, content: result))
         }
 
-        // Reset for next round
+        // Reset pending tool calls for the next round.
+        // Do NOT clear currentAssistantMessage.content here: any text the model
+        // produced before the tool call (e.g. "Here's your answer…" followed by
+        // a write-memory tool) must remain visible if the next round is silent.
         pendingToolCalls = []
-        currentAssistantMessage?.content = ""
 
         let historyForAPI = conversationHistory
         let assistantBlocks = assistantContentBlocks

@@ -57,34 +57,17 @@ struct ChatInputView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 13)
                     .focused($isFocused)
+                    // Don't auto-open the keyboard on launch.
+                    .onAppear { isFocused = false }
                     .onSubmit {
-                        if canSend {
-                            onSend()
-                        }
+                        if canSend { onSend() }
                     }
                     .glassEffect(GlassEffect.regular.interactive(), in: Capsule())
 
-                Button {
-                    onSend()
-                } label: {
-                    Group {
-                        if isLoading {
-                            ProgressView()
-                                .tint(.primary)
-                        } else {
-                            Image(systemName: "arrow.up")
-                                .font(.body.weight(.semibold))
-                        }
-                    }
-                    .frame(width: 44, height: 44)
-                }
-                .buttonStyle(.plain)
-                .disabled(!canSend)
-                .glassEffect(
-                    GlassEffect.regular
-                        .tint(canSend ? .blue.opacity(0.35) : .white.opacity(0.08))
-                        .interactive(),
-                    in: Circle()
+                AnimatedSendButton(
+                    hasText: canSend,
+                    isLoading: isLoading,
+                    onSend: onSend
                 )
             }
             .padding(.horizontal, 16)
