@@ -66,8 +66,11 @@ private final class SendButtonController {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.isLowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
-            if self?.timer != nil { self?.startTimer() }   // restart at new interval
+            // The closure is @Sendable; hop to MainActor to touch isolated state.
+            Task { @MainActor [weak self] in
+                self?.isLowPowerMode = ProcessInfo.processInfo.isLowPowerModeEnabled
+                if self?.timer != nil { self?.startTimer() }
+            }
         }
     }
 
@@ -98,8 +101,10 @@ private final class SendButtonController {
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / fps, repeats: true) { [weak self] _ in
-            // Timer fires on main run loop; safe to call directly.
-            self?.tick()
+            // Timer callback is @Sendable; hop to MainActor to touch isolated state.
+            Task { @MainActor [weak self] in
+                self?.tick()
+            }
         }
     }
 
