@@ -90,7 +90,7 @@ final class SettingsManager {
         case .openai:
             return !openaiAPIKey.isEmpty
         case .lmstudio:
-            return true // Always valid — falls back to default localhost:1234 endpoint
+            return true // Always valid — falls back to default local LM Studio endpoint
         }
     }
 
