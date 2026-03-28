@@ -33,7 +33,7 @@ enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .anthropic: return "https://api.anthropic.com/v1/messages"
         case .openai: return "https://api.openai.com/v1/chat/completions"
-        case .lmstudio: return "http://localhost:1234/api/v1/chat"
+        case .lmstudio: return "http://127.0.0.1:1234/v1/chat/completions"
         }
     }
 
@@ -140,7 +140,7 @@ extension LLMConfiguration {
 
         let path = components.path.trimmingCharacters(in: .whitespacesAndNewlines)
         if path.isEmpty || path == "/" {
-            components.path = "/api/v1/chat/completions"
+            components.path = "/v1/chat/completions"
             return components.string ?? trimmed
         }
 
