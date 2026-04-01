@@ -13,7 +13,7 @@ struct RecordingLiveActivity: Widget {
                     Circle()
                         .fill(context.state.isTranscribing ? Color.blue.opacity(0.2) : Color.red.opacity(0.2))
                         .frame(width: 40, height: 40)
-                    Image(systemName: context.state.isTranscribing ? "waveform" : "mic.fill")
+                    Image(systemName: context.state.isTranscribing ? "waveform" : "record.circle")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(context.state.isTranscribing ? .blue : .red)
                 }
@@ -59,7 +59,7 @@ struct RecordingLiveActivity: Widget {
                 // Expanded view (long press)
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 8) {
-                        Image(systemName: context.state.isTranscribing ? "waveform" : "mic.fill")
+                        Image(systemName: context.state.isTranscribing ? "waveform" : "record.circle")
                             .font(.title3)
                             .foregroundStyle(context.state.isTranscribing ? .blue : .red)
                         Text(context.state.isTranscribing ? "Transcribing" : "Recording")
@@ -98,7 +98,7 @@ struct RecordingLiveActivity: Widget {
                 }
 
             } compactLeading: {
-                Image(systemName: context.state.isTranscribing ? "waveform" : "mic.fill")
+                Image(systemName: context.state.isTranscribing ? "waveform" : "record.circle")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(context.state.isTranscribing ? .blue : .red)
 
@@ -111,7 +111,7 @@ struct RecordingLiveActivity: Widget {
                 }
 
             } minimal: {
-                Image(systemName: context.state.isTranscribing ? "waveform" : "mic.fill")
+                Image(systemName: context.state.isTranscribing ? "waveform" : "record.circle")
                     .font(.caption2)
                     .foregroundStyle(context.state.isTranscribing ? .blue : .red)
             }

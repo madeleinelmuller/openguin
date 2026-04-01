@@ -80,6 +80,8 @@ enum AnthropicModel: String, CaseIterable, Identifiable, Sendable {
 }
 
 enum OpenAIModel: String, CaseIterable, Identifiable, Sendable {
+    case gpt4o = "gpt-4o"
+    case gpt4oMini = "gpt-4o-mini"
     case gpt4turbo = "gpt-4-turbo"
     case gpt4 = "gpt-4"
     case gpt35turbo = "gpt-3.5-turbo"
@@ -88,6 +90,8 @@ enum OpenAIModel: String, CaseIterable, Identifiable, Sendable {
 
     var displayName: String {
         switch self {
+        case .gpt4o: return "GPT-4o"
+        case .gpt4oMini: return "GPT-4o Mini"
         case .gpt4turbo: return "GPT-4 Turbo"
         case .gpt4: return "GPT-4"
         case .gpt35turbo: return "GPT-3.5 Turbo"
@@ -96,9 +100,11 @@ enum OpenAIModel: String, CaseIterable, Identifiable, Sendable {
 
     var description: String {
         switch self {
-        case .gpt4turbo: return "Most capable"
-        case .gpt4: return "Highly capable"
-        case .gpt35turbo: return "Fast & efficient"
+        case .gpt4o: return "Latest flagship model"
+        case .gpt4oMini: return "Fast & affordable"
+        case .gpt4turbo: return "Most capable (legacy)"
+        case .gpt4: return "Highly capable (legacy)"
+        case .gpt35turbo: return "Fast & efficient (legacy)"
         }
     }
 }
@@ -135,7 +141,16 @@ struct LLMOptions: Sendable {
 
 extension LLMConfiguration {
     fileprivate static func normalizeLMStudioEndpoint(_ endpoint: String) -> String {
-        let trimmed = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        var trimmed = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return "http://127.0.0.1:1234/v1/chat/completions"
+        }
+
+        // Auto-add http:// scheme if the user just entered IP:port or hostname:port
+        if !trimmed.hasPrefix("http://") && !trimmed.hasPrefix("https://") {
+            trimmed = "http://\(trimmed)"
+        }
+
         guard var components = URLComponents(string: trimmed) else { return trimmed }
 
         let path = components.path.trimmingCharacters(in: .whitespacesAndNewlines)

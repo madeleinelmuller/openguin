@@ -85,12 +85,29 @@ final class SettingsViewModel {
         openaiKeyInput = settings.openaiAPIKey
         customModelNameInput = settings.customModelName
 
-        // For LMStudio: pre-populate the endpoint field with the default if none saved
-        if settings.selectedProvider == .lmstudio && settings.customEndpoint.isEmpty {
-            customEndpointInput = LLMProvider.lmstudio.defaultEndpoint
+        // For LMStudio: display just host:port — the user only needs to enter IP and port
+        let stored = settings.customEndpoint
+        if settings.selectedProvider == .lmstudio {
+            customEndpointInput = Self.lmStudioHostPort(from: stored)
         } else {
-            customEndpointInput = settings.customEndpoint
+            customEndpointInput = stored
         }
+    }
+
+    /// Strips scheme and path from a stored LM Studio URL so the text field
+    /// shows just the IP:port the user needs to care about.
+    private static func lmStudioHostPort(from stored: String) -> String {
+        guard !stored.isEmpty else { return "" }
+        var s = stored
+        // Remove http:// or https://
+        for prefix in ["https://", "http://"] {
+            if s.hasPrefix(prefix) { s = String(s.dropFirst(prefix.count)); break }
+        }
+        // Remove path component
+        if let slashIdx = s.firstIndex(of: "/") {
+            s = String(s[s.startIndex..<slashIdx])
+        }
+        return s
     }
 
     func saveCurrentProvider() {
