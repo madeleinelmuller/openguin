@@ -304,17 +304,18 @@ struct ProviderSettingsView: View {
                     .padding(.top, 16)
 
                 VStack(spacing: 10) {
-                    // Endpoint
+                    // IP + Port
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Server URL")
+                        Text("IP Address & Port")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
 
-                        TextField(LLMProvider.lmstudio.defaultEndpoint,
+                        TextField("192.168.1.5:1234",
                                   text: $viewModel.customEndpointInput)
                             .font(.body.monospaced())
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            .keyboardType(.URL)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 10)
                             .glassEffect(GlassEffect.regular, in: RoundedRectangle(cornerRadius: 10))
@@ -344,15 +345,14 @@ struct ProviderSettingsView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
                         Image(systemName: "info.circle")
-                        Text("Make sure LMStudio's local server is running.")
+                        Text("Enter the IP and port of your LM Studio server. The rest of the endpoint is added automatically.")
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                    Text("Default endpoint: \(LLMProvider.lmstudio.defaultEndpoint)")
+                    Text("e.g. 192.168.1.5:1234 or localhost:1234")
                         .font(.caption.monospaced())
                         .foregroundStyle(.tertiary)
-                        .lineLimit(2)
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)

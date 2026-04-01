@@ -9,6 +9,10 @@ struct ContentView: View {
                 ChatView()
             }
 
+            Tab("Tasks", systemImage: "checklist", value: .tasks) {
+                TasksView()
+            }
+
             Tab("Memory", systemImage: "brain.head.profile", value: .memory) {
                 MemoryBrowserView()
             }
@@ -23,11 +27,27 @@ struct ContentView: View {
                 selectedTab = .settings
             }
         }
+        .onOpenURL { url in
+            handleDeepLink(url)
+        }
+    }
+
+    private func handleDeepLink(_ url: URL) {
+        guard url.scheme == "openguin" else { return }
+        switch url.host {
+        case "tasks":
+            withAnimation(.smooth) { selectedTab = .tasks }
+        case "chat":
+            withAnimation(.smooth) { selectedTab = .chat }
+        default:
+            break
+        }
     }
 }
 
 enum AppTab: String, Hashable {
     case chat
+    case tasks
     case memory
     case settings
 }

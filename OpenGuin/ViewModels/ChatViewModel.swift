@@ -219,6 +219,26 @@ final class ChatViewModel {
         }
     }
 
+    // MARK: - Meeting Recording
+
+    func startMeetingRecording() {
+        Task {
+            _ = await RecordingService.shared.startRecording()
+        }
+    }
+
+    func stopMeetingRecording() {
+        Task {
+            guard let transcript = await RecordingService.shared.stopAndTranscribe() else { return }
+            let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+            // Post transcript as a user message so the AI can summarise / extract tasks
+            let prefix = "[Meeting Recording Transcript]\n"
+            inputText = prefix + trimmed
+            sendMessage()
+        }
+    }
+
     private static func parseToolInput(from json: String) -> [String: Any] {
         guard let data = json.data(using: .utf8),
               let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {

@@ -30,6 +30,8 @@
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
 		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
 		<key>NSExceptionDomains</key>
 		<dict>
 			<key>api.anthropic.com</key>
@@ -43,7 +45,15 @@
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
-
+			<key>api.openai.com</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<false/>
+				<key>NSExceptionMinimumTLSVersion</key>
+				<string>TLSv1.2</string>
+				<key>NSIncludesSubdomains</key>
+				<true/>
+			</dict>
 			<key>localhost</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
@@ -58,10 +68,21 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.openguin.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>openguin</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>openguin needs microphone access for experimental two-way voice chat.</string>
+	<string>openguin needs microphone access for voice chat and meeting recordings.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>openguin uses speech recognition to transcribe your voice messages in experimental voice mode.</string>
+	<string>openguin uses speech recognition to transcribe your voice messages and meeting recordings.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

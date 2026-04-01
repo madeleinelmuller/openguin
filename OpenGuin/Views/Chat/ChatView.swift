@@ -19,7 +19,9 @@ struct ChatView: View {
                     ChatInputView(
                         text: $viewModel.inputText,
                         isLoading: viewModel.isLoading,
-                        onSend: { viewModel.sendMessage() }
+                        onSend: { viewModel.sendMessage() },
+                        onStartRecording: { viewModel.startMeetingRecording() },
+                        onStopRecording: { viewModel.stopMeetingRecording() }
                     )
                 }
             }
