@@ -24,7 +24,7 @@ struct TasksView: View {
                     .padding(.bottom, 16)
                 }
             }
-            .navigationTitle("Tasks & Reminders")
+            .navigationTitle("Tasks")
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

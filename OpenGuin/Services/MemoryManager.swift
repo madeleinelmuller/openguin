@@ -180,7 +180,7 @@ actor MemoryManager {
         ],
         [
             "name": "schedule_task",
-            "description": "Schedule a task reminder for a specific future time. Use ISO-8601 datetime like '2026-01-15T14:30:00-05:00'.",
+            "description": "Schedule a standalone notification at a specific future time (no task list entry). For tasks the user should track, prefer add_task with a due_date instead.",
             "input_schema": [
                 "type": "object",
                 "properties": [
@@ -198,6 +198,95 @@ actor MemoryManager {
                     ]
                 ],
                 "required": ["task", "time"]
+            ]
+        ],
+        [
+            "name": "add_task",
+            "description": "Add a task or reminder to the user's task list. If due_date is provided, a local notification is also scheduled automatically. Use this whenever the user mentions something they need to do, or when extracting action items from a recording.",
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "title": [
+                        "type": "string",
+                        "description": "Clear, concise task title."
+                    ],
+                    "note": [
+                        "type": "string",
+                        "description": "Optional extra detail or context for the task."
+                    ],
+                    "due_date": [
+                        "type": "string",
+                        "description": "Optional due date/time in ISO-8601 format. When provided a notification is also scheduled."
+                    ],
+                    "reminder_message": [
+                        "type": "string",
+                        "description": "Optional custom message shown in the notification."
+                    ]
+                ],
+                "required": ["title"]
+            ]
+        ],
+        [
+            "name": "list_tasks",
+            "description": "List all current tasks and reminders, including pending and recently completed.",
+            "input_schema": [
+                "type": "object",
+                "properties": [:],
+                "required": []
+            ]
+        ],
+        [
+            "name": "complete_task",
+            "description": "Mark a task as completed using its ID prefix (first 8 characters of the task ID).",
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "id_prefix": [
+                        "type": "string",
+                        "description": "The first 4–8 characters of the task ID, as shown by list_tasks."
+                    ]
+                ],
+                "required": ["id_prefix"]
+            ]
+        ],
+        [
+            "name": "delete_task",
+            "description": "Permanently delete a task using its ID prefix.",
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "id_prefix": [
+                        "type": "string",
+                        "description": "The first 4–8 characters of the task ID, as shown by list_tasks."
+                    ]
+                ],
+                "required": ["id_prefix"]
+            ]
+        ],
+        [
+            "name": "update_task",
+            "description": "Edit a task's title, note, or due date. Only pass the fields you want to change.",
+            "input_schema": [
+                "type": "object",
+                "properties": [
+                    "id_prefix": [
+                        "type": "string",
+                        "description": "The first 4–8 characters of the task ID, as shown by list_tasks."
+                    ],
+                    "title": [
+                        "type": "string",
+                        "description": "New title for the task."
+                    ],
+                    "note": [
+                        "type": "string",
+                        "description": "New note/detail for the task."
+                    ],
+                    "due_date": [
+                        "type": "string",
+                        "description": "New due date in ISO-8601 format."
+                    ]
+                ],
+                "required": ["id_prefix"]
             ]
         ]
     ]
@@ -373,6 +462,64 @@ actor MemoryManager {
             }
             let note = input["note"] as? String
             return await NotificationManager.shared.scheduleAgentTaskNotification(task: task, note: note, at: date)
+
+        case "add_task":
+            guard let title = input["title"] as? String, !title.isEmpty else {
+                return "[Error: Missing or empty 'title' parameter]"
+            }
+            let note = input["note"] as? String
+            let dueDateStr = input["due_date"] as? String
+            let dueDate = dueDateStr.flatMap { Self.parseISO8601Date(from: $0) }
+            let reminderMsg = input["reminder_message"] as? String
+            return await MainActor.run {
+                TaskStore.shared.addTaskAndDescribe(
+                    title: title, note: note, dueDate: dueDate,
+                    reminderMessage: reminderMsg, source: .agent
+                )
+            }
+
+        case "list_tasks":
+            return await MainActor.run { TaskStore.shared.listForAgent() }
+
+        case "complete_task":
+            guard let prefix = input["id_prefix"] as? String, !prefix.isEmpty else {
+                return "[Error: Missing 'id_prefix' parameter]"
+            }
+            return await MainActor.run { TaskStore.shared.completeTaskByPrefix(prefix) }
+
+        case "delete_task":
+            guard let prefix = input["id_prefix"] as? String, !prefix.isEmpty else {
+                return "[Error: Missing 'id_prefix' parameter]"
+            }
+            return await MainActor.run {
+                guard let task = TaskStore.shared.findTask(byIDPrefix: prefix) else {
+                    return "[Error: No task found with ID prefix '\(prefix)']"
+                }
+                let title = task.title
+                TaskStore.shared.deleteTask(id: task.id)
+                return "Deleted task: '\(title)'"
+            }
+
+        case "update_task":
+            guard let prefix = input["id_prefix"] as? String, !prefix.isEmpty else {
+                return "[Error: Missing 'id_prefix' parameter]"
+            }
+            let newTitle = input["title"] as? String
+            let newNote  = input["note"] as? String
+            let newDueDateStr = input["due_date"] as? String
+            let newDueDate = newDueDateStr.flatMap { Self.parseISO8601Date(from: $0) }
+            return await MainActor.run {
+                guard let task = TaskStore.shared.findTask(byIDPrefix: prefix) else {
+                    return "[Error: No task found with ID prefix '\(prefix)']"
+                }
+                let success = TaskStore.shared.updateTask(
+                    id: task.id, title: newTitle, note: newNote, dueDate: newDueDate
+                )
+                return success
+                    ? "Updated task: '\(task.title)'"
+                    : "[Error: Could not update task '\(prefix)']"
+            }
+
         default:
             return "[Error: Unknown tool '\(name)']"
         }

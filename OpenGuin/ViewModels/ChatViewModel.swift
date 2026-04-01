@@ -55,7 +55,7 @@ final class ChatViewModel {
         }
     }
 
-    // MARK: - Streaming
+    // MARK: - Streaming (accumulates internally; message only shown on finalize)
 
     private func streamResponse() async {
         let msgs = conversationHistory
@@ -80,8 +80,7 @@ final class ChatViewModel {
             onComplete: { [weak self] stopReason in
                 Task { @MainActor in
                     guard let self else { return }
-                    let isToolCall = (stopReason == "tool_use" || stopReason == "tool_calls") && !self.pendingToolCalls.isEmpty
-                    if isToolCall {
+                    if self.isToolCallStop(stopReason) {
                         await self.handleToolCalls()
                     } else {
                         self.finalizeResponse()
@@ -98,6 +97,13 @@ final class ChatViewModel {
                 }
             }
         )
+    }
+
+    /// Returns true when the stop reason indicates the model wants to invoke tools.
+    /// Handles both Anthropic ("tool_use") and OpenAI ("tool_calls") stop reasons.
+    private func isToolCallStop(_ reason: String?) -> Bool {
+        guard let reason else { return false }
+        return (reason == "tool_use" || reason == "tool_calls") && !pendingToolCalls.isEmpty
     }
 
     // MARK: - Tool Handling
@@ -156,7 +162,7 @@ final class ChatViewModel {
             onComplete: { [weak self] stopReason in
                 Task { @MainActor in
                     guard let self else { return }
-                    if stopReason == "tool_use" && !self.pendingToolCalls.isEmpty {
+                    if self.isToolCallStop(stopReason) {
                         await self.handleToolCalls()
                     } else {
                         self.finalizeResponse()
@@ -177,15 +183,20 @@ final class ChatViewModel {
     // MARK: - Finalize
 
     private func finalizeResponse() {
-        if !responseText.isEmpty {
-            let assistantMessage = ChatMessage(role: .assistant, content: responseText)
-            messages.append(assistantMessage)
-            conversationHistory.append(assistantMessage)
-            // Notify the user if the app is in the background
-            NotificationManager.shared.sendResponseNotification(responseText: responseText)
+        guard !responseText.isEmpty else {
+            isLoading = false
+            return
         }
+        let assistantMessage = ChatMessage(role: .assistant, content: responseText)
+        conversationHistory.append(assistantMessage)
         responseText = ""
         isLoading = false
+        // Animate the message into the list after loading has cleared,
+        // so the loading bubble exits first and the message springs in cleanly.
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
+            messages.append(assistantMessage)
+        }
+        NotificationManager.shared.sendResponseNotification(responseText: assistantMessage.content)
     }
 
     // MARK: - Clear Chat
