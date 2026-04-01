@@ -9,7 +9,7 @@ struct ChatInputView: View {
 
     var body: some View {
         GlassEffectContainer(spacing: 12) {
-            HStack(alignment: .bottom, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
                 TextField("Message openguin...", text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .font(.body)
