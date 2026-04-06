@@ -114,10 +114,16 @@ final class SettingsManager {
             modelId = customModelName.isEmpty ? "local-model" : customModelName
         }
 
+        // Only pass a custom endpoint for LM Studio — Anthropic and OpenAI
+        // always use their official endpoints.
+        let endpoint: String? = selectedProvider == .lmstudio
+            ? (customEndpoint.isEmpty ? nil : customEndpoint)
+            : nil
+
         return LLMConfiguration(
             provider: selectedProvider,
             apiKey: apiKey,
-            endpoint: customEndpoint.isEmpty ? nil : customEndpoint,
+            endpoint: endpoint,
             modelId: modelId,
             customModelName: customModelName.isEmpty ? nil : customModelName
         )

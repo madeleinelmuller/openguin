@@ -49,9 +49,9 @@ struct TasksView: View {
             Image(systemName: "checklist")
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
-            Text("No tasks yet")
+            Text("No tasks or reminders yet")
                 .font(.title3.weight(.semibold))
-            Text("Tasks will appear here when openguin creates them from your conversations, or when you add them manually.")
+            Text("Tasks and reminders will appear here when openguin creates them from your conversations, recordings, or when you add them manually.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -144,9 +144,11 @@ private struct TaskRow: View {
                     }
 
                     if let due = task.dueDate {
-                        Label(due.formatted(.dateTime.month(.abbreviated).day().hour().minute()), systemImage: "clock")
+                        let overdue = due < Date() && !task.isCompleted
+                        Label(due.formatted(.dateTime.month(.abbreviated).day().hour().minute()),
+                              systemImage: overdue ? "bell.fill" : "bell")
                             .font(.caption2)
-                            .foregroundStyle(due < Date() && !task.isCompleted ? .red : .secondary)
+                            .foregroundStyle(overdue ? .red : .secondary)
                     }
 
                     sourceLabel

@@ -12,12 +12,17 @@ final class RecordingService {
     var recordingDuration: TimeInterval = 0
     var isTranscribing = false
     var transcriptionError: String?
+    /// Normalized audio levels (0.0–1.0) sampled ~5× per second, capped at last 25 samples (≈5 seconds).
+    var audioLevels: [Float] = []
 
     private var audioRecorder: AVAudioRecorder?
     private var recordingURL: URL?
     private var durationTask: Task<Void, Never>?
     private var recordingStartTime: Date?
     private var liveActivity: Activity<OpenGuinSharedTypes.RecordingAttributes>?
+
+    // Keep 25 samples = ~5 seconds at 5 Hz
+    private let maxLevelSamples = 25
 
     private init() {}
 
@@ -76,24 +81,39 @@ final class RecordingService {
             ]
 
             audioRecorder = try AVAudioRecorder(url: url, settings: settings)
+            audioRecorder?.isMeteringEnabled = true
             audioRecorder?.record()
 
             isRecording = true
             recordingStartTime = Date()
             recordingDuration = 0
+            audioLevels = []
             transcriptionError = nil
 
             // Start Live Activity
             startLiveActivity()
 
-            // Duration tracking using a Task loop (actor-safe, no @Sendable closure)
+            // Duration + metering loop at ~5 Hz
             durationTask?.cancel()
             durationTask = Task { [weak self] in
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(1))
+                    try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
                     guard let self, self.isRecording, let start = self.recordingStartTime else { break }
                     self.recordingDuration = Date().timeIntervalSince(start)
-                    self.updateLiveActivity()
+                    // Sample audio level
+                    self.audioRecorder?.updateMeters()
+                    let power = self.audioRecorder?.averagePower(forChannel: 0) ?? -160
+                    // Convert dB (-160…0) to 0…1 with a floor of -50 dB for sensitivity
+                    let normalized = max(0, min(1, (power + 50) / 50))
+                    self.audioLevels.append(normalized)
+                    if self.audioLevels.count > self.maxLevelSamples {
+                        self.audioLevels.removeFirst(self.audioLevels.count - self.maxLevelSamples)
+                    }
+                    // Update Live Activity once per second (every 5th sample at 5 Hz)
+                    let sampleIndex = Int(self.recordingDuration / 0.2)
+                    if sampleIndex % 5 == 0 {
+                        self.updateLiveActivity()
+                    }
                 }
             }
 
@@ -112,6 +132,7 @@ final class RecordingService {
         isRecording = false
         durationTask?.cancel()
         durationTask = nil
+        audioLevels = []
 
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
 
@@ -189,9 +210,20 @@ final class RecordingService {
     private func startLiveActivity() {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
-        let attributes = OpenGuinSharedTypes.RecordingAttributes(sessionName: "Recording")
+        // End any stale activity from a previous session
+        if let existing = liveActivity {
+            Task { await existing.end(nil, dismissalPolicy: .immediate) }
+            self.liveActivity = nil
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        let sessionName = formatter.string(from: Date())
+
+        let attributes = OpenGuinSharedTypes.RecordingAttributes(sessionName: sessionName)
         let state = OpenGuinSharedTypes.RecordingAttributes.ContentState(duration: 0, isTranscribing: false)
-        let content = ActivityContent(state: state, staleDate: nil)
+        let content = ActivityContent(state: state, staleDate: Date().addingTimeInterval(3600))
 
         do {
             liveActivity = try Activity.request(attributes: attributes, content: content, pushType: nil)
@@ -207,7 +239,7 @@ final class RecordingService {
             duration: recordingDuration,
             isTranscribing: isTranscribing
         )
-        let content = ActivityContent(state: state, staleDate: nil)
+        let content = ActivityContent(state: state, staleDate: Date().addingTimeInterval(3600))
         Task {
             await liveActivity.update(content)
         }
