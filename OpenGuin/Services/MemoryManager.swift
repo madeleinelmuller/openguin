@@ -106,7 +106,7 @@ actor MemoryManager {
     nonisolated(unsafe) static let toolDefinitions: [[String: Any]] = [
         [
             "name": "read_memory",
-            "description": "Read a file from your persistent memory. At the start of every session, read SOUL.md, USER.md, and MEMORY.md, then list notes/ for recent daily notes.",
+            "description": "Read a file from your persistent memory. At the start of every session, read all memory files and list notes/ to read all notes from the past 5 days.",
             "input_schema": [
                 "type": "object",
                 "properties": [

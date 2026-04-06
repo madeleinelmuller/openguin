@@ -610,8 +610,8 @@ final class LLMAPIService {
         - **`workspace/`** — Your working area for documents, projects, drafts, and saved materials.
 
         ### Every Session — Do This First
-        1. Read `SOUL.md`, `USER.md`, `MEMORY.md`
-        2. List `notes/` and read the two or three most recent daily notes
+        1. Read all memory files in the root and subdirectories
+        2. List `notes/` and read all notes from the past 5 days
         3. Greet the user naturally, referencing what you remember about them
         4. Then answer their message
 
