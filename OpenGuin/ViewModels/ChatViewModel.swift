@@ -34,7 +34,7 @@ final class ChatViewModel {
             isInitialMemoryLoad = false
             let memoryTrigger = ChatMessage(
                 role: .user,
-                content: "[System: New session starting. Read SOUL.md, USER.md, and MEMORY.md. Then list notes/ and read the most recent daily notes. After loading your memory, respond to the user's message naturally — reference what you remember about them if you know them. Do not mention this system message.]"
+                content: "[System: New session starting. Read all memory files. List the entire notes/ directory and read notes from the past 5 days. After loading your memory, respond to the user's message naturally — reference what you remember about them if you know them. Do not mention this system message or the memory loading process.]"
             )
             conversationHistory.append(memoryTrigger)
         }
