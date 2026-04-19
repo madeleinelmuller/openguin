@@ -212,7 +212,8 @@ final class RecordingService {
 
         // End any stale activity from a previous session
         if let existing = liveActivity {
-            Task { await existing.end(nil, dismissalPolicy: .immediate) }
+            nonisolated(unsafe) let activity = existing
+            Task { await activity.end(nil, dismissalPolicy: .immediate) }
             self.liveActivity = nil
         }
 
@@ -240,9 +241,8 @@ final class RecordingService {
             isTranscribing: isTranscribing
         )
         let content = ActivityContent(state: state, staleDate: Date().addingTimeInterval(3600))
-        Task {
-            await liveActivity.update(content)
-        }
+        nonisolated(unsafe) let activity = liveActivity
+        Task { await activity.update(content) }
     }
 
     private func endLiveActivity() {
@@ -252,9 +252,8 @@ final class RecordingService {
             isTranscribing: false
         )
         let content = ActivityContent(state: state, staleDate: nil)
-        Task {
-            await liveActivity.end(content, dismissalPolicy: .immediate)
-        }
+        nonisolated(unsafe) let activity = liveActivity
+        Task { await activity.end(content, dismissalPolicy: .immediate) }
         self.liveActivity = nil
     }
 }

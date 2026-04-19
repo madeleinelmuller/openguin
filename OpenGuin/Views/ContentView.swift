@@ -4,6 +4,28 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .chat
 
     var body: some View {
+        contentTabs
+            .onReceive(NotificationCenter.default.publisher(for: .openChatFromNotification)) { _ in
+                withAnimation(.smooth) {
+                    selectedTab = .chat
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openTasksTab)) { _ in
+                withAnimation(.smooth) {
+                    selectedTab = .tasks
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToSettings)) { _ in
+                withAnimation(.smooth) {
+                    selectedTab = .settings
+                }
+            }
+            .onOpenURL { url in
+                handleDeepLink(url)
+            }
+    }
+
+    private var contentTabs: some View {
         TabView(selection: $selectedTab) {
             Tab("Chat", systemImage: "message", value: .chat) {
                 ChatView()
@@ -20,15 +42,6 @@ struct ContentView: View {
             Tab("Settings", systemImage: "gearshape", value: .settings) {
                 ProviderSettingsView()
             }
-        }
-        .tabBarMinimizeBehavior(.onScrollDown)
-        .onReceive(NotificationCenter.default.publisher(for: .switchToSettings)) { _ in
-            withAnimation(.smooth) {
-                selectedTab = .settings
-            }
-        }
-        .onOpenURL { url in
-            handleDeepLink(url)
         }
     }
 
