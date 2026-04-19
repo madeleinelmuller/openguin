@@ -5,7 +5,6 @@ struct ContentView: View {
 
     var body: some View {
         contentTabs
-            .applyTabBarMinimizeBehaviorIfAvailable()
             .onReceive(NotificationCenter.default.publisher(for: .openChatFromNotification)) { _ in
                 withAnimation(.smooth) {
                     selectedTab = .chat
@@ -55,17 +54,6 @@ struct ContentView: View {
             withAnimation(.smooth) { selectedTab = .chat }
         default:
             break
-        }
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func applyTabBarMinimizeBehaviorIfAvailable() -> some View {
-        if #available(iOS 26.0, *) {
-            self.tabBarMinimizeBehavior(.onScrollDown)
-        } else {
-            self
         }
     }
 }
