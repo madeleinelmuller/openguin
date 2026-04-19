@@ -35,10 +35,8 @@ final class TaskStore {
         if let dueDate, dueDate > Date() {
             Task {
                 _ = await NotificationManager.shared.scheduleAgentTaskNotification(
-                    task: title,
+                    task: reminderMessage ?? title,
                     note: note,
-                    title: "Reminder",
-                    userMessage: reminderMessage ?? title,
                     at: dueDate
                 )
             }
@@ -136,8 +134,7 @@ final class TaskStore {
     private func save() {
         do {
             let data = try JSONEncoder().encode(tasks)
-            let encrypted = try SecurityManager.shared.encrypt(data)
-            try encrypted.write(to: saveURL, options: .atomic)
+            try data.write(to: saveURL, options: .atomic)
         } catch {
             print("[TaskStore] Save error: \(error)")
         }
@@ -164,17 +161,9 @@ final class TaskStore {
         guard FileManager.default.fileExists(atPath: saveURL.path) else { return }
         do {
             let data = try Data(contentsOf: saveURL)
-            let decrypted = try SecurityManager.shared.decrypt(data)
-            tasks = try JSONDecoder().decode([TaskItem].self, from: decrypted)
+            tasks = try JSONDecoder().decode([TaskItem].self, from: data)
         } catch {
-            // Try plaintext fallback
-            if let data = try? Data(contentsOf: saveURL),
-               let decoded = try? JSONDecoder().decode([TaskItem].self, from: data) {
-                tasks = decoded
-                save() // Re-encrypt
-            } else {
-                print("[TaskStore] Load error: \(error)")
-            }
+            print("[TaskStore] Load error: \(error)")
         }
     }
 }

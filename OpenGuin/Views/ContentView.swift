@@ -4,6 +4,29 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .chat
 
     var body: some View {
+        contentTabs
+            .applyTabBarMinimizeBehaviorIfAvailable()
+            .onReceive(NotificationCenter.default.publisher(for: .openChatFromNotification)) { _ in
+                withAnimation(.smooth) {
+                    selectedTab = .chat
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openTasksTab)) { _ in
+                withAnimation(.smooth) {
+                    selectedTab = .tasks
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .switchToSettings)) { _ in
+                withAnimation(.smooth) {
+                    selectedTab = .settings
+                }
+            }
+            .onOpenURL { url in
+                handleDeepLink(url)
+            }
+    }
+
+    private var contentTabs: some View {
         TabView(selection: $selectedTab) {
             Tab("Chat", systemImage: "message", value: .chat) {
                 ChatView()
@@ -21,15 +44,6 @@ struct ContentView: View {
                 ProviderSettingsView()
             }
         }
-        .tabBarMinimizeBehavior(.onScrollDown)
-        .onReceive(NotificationCenter.default.publisher(for: .switchToSettings)) { _ in
-            withAnimation(.smooth) {
-                selectedTab = .settings
-            }
-        }
-        .onOpenURL { url in
-            handleDeepLink(url)
-        }
     }
 
     private func handleDeepLink(_ url: URL) {
@@ -41,6 +55,17 @@ struct ContentView: View {
             withAnimation(.smooth) { selectedTab = .chat }
         default:
             break
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyTabBarMinimizeBehaviorIfAvailable() -> some View {
+        if #available(iOS 26.0, *) {
+            self.tabBarMinimizeBehavior(.onScrollDown)
+        } else {
+            self
         }
     }
 }
