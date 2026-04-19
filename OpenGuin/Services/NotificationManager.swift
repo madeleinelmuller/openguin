@@ -7,7 +7,7 @@ final class NotificationManager {
     private init() {}
 
     func requestPermission() async {
-        try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
+        _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])
     }
 
     func schedule(title: String, body: String, at date: Date, identifier: String? = nil) async {
