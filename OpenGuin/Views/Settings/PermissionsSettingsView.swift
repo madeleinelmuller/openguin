@@ -13,7 +13,7 @@ struct PermissionsSettingsView: View {
                 title: "Calendar",
                 description: "Create and view calendar events",
                 icon: "calendar",
-                granted: calendarStatus == .fullAccess || calendarStatus == .authorized
+                granted: calendarStatus == .fullAccess
             ) {
                 Task {
                     _ = await CalendarService.shared.requestAccess()
@@ -25,7 +25,7 @@ struct PermissionsSettingsView: View {
                 title: "Reminders",
                 description: "Create and manage reminders",
                 icon: "bell",
-                granted: remindersStatus == .fullAccess || remindersStatus == .authorized
+                granted: remindersStatus == .fullAccess
             ) {
                 Task {
                     _ = await RemindersService.shared.requestAccess()

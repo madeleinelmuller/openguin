@@ -156,19 +156,19 @@ final class ChatViewModel {
     }
 
     private func finalizeMessage(_ text: String) {
-        var msg = ChatMessage(role: .assistant, content: text, isRevealed: false)
+        let msg = ChatMessage(role: .assistant, content: text, isRevealed: false)
         conversation.messages.append(msg)
         store.update(conversation)
 
-        // Trigger reveal animation after a short delay
+        // Flip isRevealed after a short delay so WordRevealModifier's
+        // animation(_:value:) picks up the transition. Animation itself
+        // lives in the view layer (MessageRevealModifier).
         let msgID = msg.id
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
-                if let idx = conversation.messages.firstIndex(where: { $0.id == msgID }) {
-                    conversation.messages[idx].isRevealed = true
-                }
-            }
+            guard let idx = conversation.messages.firstIndex(where: { $0.id == msgID }) else { return }
+            conversation.messages[idx].isRevealed = true
+            store.update(conversation)
         }
     }
 

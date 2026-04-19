@@ -130,9 +130,7 @@ struct OnboardingPermissionsView: View {
     @MainActor
     private func checkStatuses() async {
         calendarGranted = EKEventStore.authorizationStatus(for: .event) == .fullAccess
-            || EKEventStore.authorizationStatus(for: .event) == .authorized
         remindersGranted = EKEventStore.authorizationStatus(for: .reminder) == .fullAccess
-            || EKEventStore.authorizationStatus(for: .reminder) == .authorized
         micGranted = SFSpeechRecognizer.authorizationStatus() == .authorized
     }
 }

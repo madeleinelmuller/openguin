@@ -16,6 +16,20 @@ Entries are in reverse chronological order. Agents add entries at the top. Users
 
 ## Entries
 
+### 2026-04-19 — Build fixes & navigation cleanup (claude-opus-4-7)
+
+Fixed all build errors + warnings. Build is green for `generic/platform=iOS`.
+
+**Fixes:**
+- `OpenGuin/ViewModels/ChatViewModel.swift:167` — removed `withAnimation(.spring(...))` wrapper in `finalizeMessage`. ChatViewModel doesn't import SwiftUI, so `withAnimation` was unresolved. The per-word reveal already animates via `WordRevealModifier`'s `.animation(_:value: isRevealed)`, so the VM just flips `isRevealed` and the view layer animates. Also changed `var msg` → `let msg` and added a `store.update(conversation)` after the flip so the persisted copy reflects the revealed state. **Rule going forward: keep SwiftUI out of ViewModels — animation belongs in the view layer.**
+- `OpenGuin/Views/Root/ContentView.swift:10` — renamed local `enum Tab` → `enum AppTab`. It collided with SwiftUI's iOS 18+ `Tab` struct used in `TabView { Tab(...) { ... } }`, which made the compiler resolve `Tab("Chat", ...)` to the enum and fail. **Rule going forward: don't name local types `Tab`, `Section`, `Group`, etc. — SwiftUI adds new top-level types each release.**
+- `OpenGuin/Views/Onboarding/OnboardingPermissionsView.swift` + `OpenGuin/Views/Settings/PermissionsSettingsView.swift` — dropped deprecated `EKAuthorizationStatus.authorized` fallback; `.fullAccess` is the iOS 17+ canonical value and deployment target is iOS 18.
+- `OpenGuin/Services/NotificationManager.swift:10` — silenced unused-result warning on `try? await requestAuthorization(...)` with `_ =`.
+
+**No behavior changes** beyond the build-error and warning fixes above.
+
+---
+
 ### 2026-04-18 — Complete rebuild (claude-sonnet-4-6)
 
 **Fresh start from scratch.** The prior codebase was wiped. New architecture:

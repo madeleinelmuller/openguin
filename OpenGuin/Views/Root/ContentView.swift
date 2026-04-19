@@ -2,12 +2,13 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AppEnvironment.self) private var env
-    @State private var selectedTab: Tab = .chat
+    @State private var selectedTab: AppTab = .chat
     @State private var chatVM: ChatViewModel?
     @State private var memoryVM = MemoryViewModel()
     @State private var settingsVM = SettingsViewModel()
 
-    enum Tab: Hashable {
+    // Named `AppTab` to avoid collision with SwiftUI's `Tab` (iOS 18+).
+    enum AppTab: Hashable {
         case chat, memory, settings
     }
 
