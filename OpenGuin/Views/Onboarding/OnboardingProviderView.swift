@@ -31,14 +31,94 @@ struct OnboardingProviderView: View {
             }
             .padding(.bottom, 32)
 
-            // Provider form in a glass card
+            // Provider settings in a glass card
             GlassCard(cornerRadius: 24, padding: 20) {
-                VStack(spacing: 0) {
-                    Form {
-                        ProviderSettingsView(vm: vm)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Provider picker
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Provider")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                            Picker("Provider", selection: $vm.provider) {
+                                ForEach(LLMProvider.allCases) { provider in
+                                    Text(provider.displayName).tag(provider)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
+                        Divider()
+
+                        // Model / endpoint fields
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Model")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .textCase(.uppercase)
+                            if vm.provider == .ollama {
+                                HStack {
+                                    Text("Endpoint")
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    TextField("http://localhost:11434", text: $vm.ollamaEndpoint)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                        .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Divider()
+                                HStack {
+                                    Text("Model name")
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    TextField("Model name", text: $vm.model)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                        .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else if vm.provider == .lmStudio {
+                                HStack {
+                                    Text("Endpoint")
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    TextField("http://localhost:1234", text: $vm.lmStudioEndpoint)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                        .multilineTextAlignment(.trailing)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } else {
+                                Picker("Model", selection: $vm.model) {
+                                    ForEach(vm.provider.availableModels, id: \.self) { m in
+                                        Text(m).tag(m)
+                                    }
+                                }
+                            }
+                        }
+
+                        if vm.provider.requiresAPIKey {
+                            Divider()
+
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("API Key")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .textCase(.uppercase)
+                                if vm.provider == .anthropic {
+                                    SecureField("Anthropic API Key", text: $vm.anthropicKey)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                } else if vm.provider == .openAI {
+                                    SecureField("OpenAI API Key", text: $vm.openAIKey)
+                                        .textInputAutocapitalization(.never)
+                                        .autocorrectionDisabled()
+                                }
+                            }
+                        }
                     }
-                    .scrollDisabled(true)
-                    .frame(height: 280)
                 }
             }
             .padding(.horizontal, 24)
