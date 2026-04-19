@@ -47,9 +47,8 @@ struct TasksView: View {
                         taskRow(task)
                     }
                     .onDelete { indexSet in
-                        for index in indexSet {
-                            taskStore.deleteTask(id: taskStore.pendingTasks[index].id)
-                        }
+                        let ids = indexSet.map { taskStore.pendingTasks[$0].id }
+                        ids.forEach { taskStore.deleteTask(id: $0) }
                     }
                 }
                 .listStyle(.plain)
@@ -79,9 +78,8 @@ struct TasksView: View {
                         taskRow(task)
                     }
                     .onDelete { indexSet in
-                        for index in indexSet {
-                            taskStore.deleteTask(id: taskStore.completedTasks[index].id)
-                        }
+                        let ids = indexSet.map { taskStore.completedTasks[$0].id }
+                        ids.forEach { taskStore.deleteTask(id: $0) }
                     }
                 }
                 .listStyle(.plain)

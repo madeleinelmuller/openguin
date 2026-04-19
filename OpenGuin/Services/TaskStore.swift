@@ -159,11 +159,17 @@ final class TaskStore {
 
     private func load() {
         guard FileManager.default.fileExists(atPath: saveURL.path) else { return }
-        do {
-            let data = try Data(contentsOf: saveURL)
-            tasks = try JSONDecoder().decode([TaskItem].self, from: data)
-        } catch {
-            print("[TaskStore] Load error: \(error)")
+        guard let data = try? Data(contentsOf: saveURL) else { return }
+        // Try plaintext JSON (current format)
+        if let decoded = try? JSONDecoder().decode([TaskItem].self, from: data) {
+            tasks = decoded
+            return
         }
+        // File exists but is not valid JSON — likely encrypted by a prior build.
+        // Cannot decrypt without the removed SecurityManager; reset to empty and
+        // overwrite so future saves use plaintext.
+        print("[TaskStore] Could not decode tasks (possibly legacy encrypted format). Starting fresh.")
+        tasks = []
+        save()
     }
 }
