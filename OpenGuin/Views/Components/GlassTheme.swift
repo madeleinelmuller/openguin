@@ -15,18 +15,7 @@ extension View {
 
     @ViewBuilder
     func adaptiveGlass<S: Shape>(_ style: GlassStyle = .regular, shape: S) -> some View {
-        if #available(iOS 26, *) {
-            switch style {
-            case .regular:
-                self.glassEffect(.regular, in: shape)
-            case .clear:
-                self.glassEffect(.regular.tint(.clear), in: shape)
-            case .interactive:
-                self.glassEffect(.regular.interactive(), in: shape)
-            }
-        } else {
-            self.background(.ultraThinMaterial, in: shape)
-        }
+        self.background(.ultraThinMaterial, in: shape)
     }
 
     @ViewBuilder

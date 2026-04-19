@@ -2,12 +2,12 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(AppEnvironment.self) private var env
-    @State private var selectedTab: Tab = .chat
+    @State private var selectedTab: AppTab = .chat
     @State private var chatVM: ChatViewModel?
     @State private var memoryVM = MemoryViewModel()
     @State private var settingsVM = SettingsViewModel()
 
-    enum Tab: Hashable {
+    enum AppTab: Hashable {
         case chat, memory, settings
     }
 
@@ -29,19 +29,23 @@ struct ContentView: View {
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
-            Tab("Chat", systemImage: "bubble.left.and.bubble.right.fill", value: .chat) {
+            Group {
                 if let vm = chatVM {
                     ChatView(vm: vm)
                 } else {
                     ProgressView()
                 }
             }
-            Tab("Memory", systemImage: "brain.head.profile.fill", value: .memory) {
-                MemoryBrowserView(vm: memoryVM)
-            }
-            Tab("Settings", systemImage: "gearshape.fill", value: .settings) {
-                SettingsView(vm: settingsVM)
-            }
+            .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
+            .tag(AppTab.chat)
+
+            MemoryBrowserView(vm: memoryVM)
+                .tabItem { Label("Memory", systemImage: "brain.head.profile.fill") }
+                .tag(AppTab.memory)
+
+            SettingsView(vm: settingsVM)
+                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
+                .tag(AppTab.settings)
         }
         .onReceive(NotificationCenter.default.publisher(for: .switchToChat)) { _ in
             selectedTab = .chat
