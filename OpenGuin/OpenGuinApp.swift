@@ -2,13 +2,12 @@ import SwiftUI
 
 @main
 struct OpenGuinApp: App {
-    init() {
-        _ = NotificationManager.shared
-    }
+    @State private var env = AppEnvironment.shared
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(env)
                 .task {
                     await NotificationManager.shared.requestPermission()
                 }
