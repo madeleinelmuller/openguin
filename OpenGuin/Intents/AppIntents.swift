@@ -1,147 +1,85 @@
 import AppIntents
 import Foundation
 
-// MARK: - Open App Intent
+// MARK: - Open Chat
 
 struct OpenOpenGuinIntent: AppIntent {
-    nonisolated static let title: LocalizedStringResource = "Open openguin"
-    nonisolated static let description: IntentDescription = "Opens the openguin app"
-    static let openAppWhenRun: Bool = true
+    static let title: LocalizedStringResource = "Open Openguin"
+    static let description = IntentDescription("Opens the Openguin chat.")
+    static let openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
-        .result()
+        NotificationCenter.default.post(name: .switchToChat, object: nil)
+        return .result()
     }
 }
 
-// MARK: - Add Task Intent
+// MARK: - Create Reminder via Shortcut
 
-struct AddTaskIntent: AppIntent {
-    nonisolated static let title: LocalizedStringResource = "Add Task"
-    nonisolated static let description: IntentDescription = "Creates a new task in openguin"
+struct CreateReminderIntent: AppIntent {
+    static let title: LocalizedStringResource = "Create Reminder"
+    static let description = IntentDescription("Creates a reminder via Openguin.")
 
-    @Parameter(title: "Title")
-    var taskTitle: String
+    @Parameter(title: "Title") var title: String
+    @Parameter(title: "Due Date") var dueDate: Date?
+    @Parameter(title: "Notes") var notes: String?
 
-    @Parameter(title: "Note", default: nil)
-    var note: String?
-
-    @Parameter(title: "Due Date", default: nil)
-    var dueDate: Date?
-
-    @MainActor
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let result = TaskStore.shared.addTaskAndDescribe(
-            title: taskTitle,
-            note: note,
-            dueDate: dueDate,
-            source: .user
+        let result = await RemindersService.shared.createReminder(
+            title: title,
+            dueDate: dueDate.map { ISO8601DateFormatter().string(from: $0) },
+            notes: notes,
+            listName: nil
         )
         return .result(value: result)
     }
 }
 
-// MARK: - List Tasks Intent
+// MARK: - Create Calendar Event via Shortcut
 
-struct ListTasksIntent: AppIntent {
-    nonisolated static let title: LocalizedStringResource = "List Tasks"
-    nonisolated static let description: IntentDescription = "Lists all pending tasks from openguin"
+struct CreateCalendarEventIntent: AppIntent {
+    static let title: LocalizedStringResource = "Create Calendar Event"
+    static let description = IntentDescription("Creates a calendar event via Openguin.")
 
-    @MainActor
+    @Parameter(title: "Title") var title: String
+    @Parameter(title: "Start Date") var startDate: Date
+    @Parameter(title: "End Date") var endDate: Date
+    @Parameter(title: "Notes") var notes: String?
+
     func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let result = TaskStore.shared.listForAgent()
+        let formatter = ISO8601DateFormatter()
+        let result = await CalendarService.shared.createEvent(
+            title: title,
+            start: formatter.string(from: startDate),
+            end: formatter.string(from: endDate),
+            notes: notes,
+            calendarName: nil
+        )
         return .result(value: result)
     }
 }
 
-// MARK: - Complete Task Intent
+// MARK: - App Shortcuts
 
-struct CompleteTaskIntent: AppIntent {
-    nonisolated static let title: LocalizedStringResource = "Complete Task"
-    nonisolated static let description: IntentDescription = "Marks a task as complete"
-
-    @Parameter(title: "Task Title")
-    var taskTitle: String
-
-    @MainActor
-    func perform() async throws -> some IntentResult & ReturnsValue<String> {
-        let store = TaskStore.shared
-        if let task = store.tasks.first(where: {
-            $0.title.localizedCaseInsensitiveContains(taskTitle) && !$0.isCompleted
-        }) {
-            _ = store.completeTask(id: task.id)
-            return .result(value: "Completed: \(task.title)")
-        }
-        return .result(value: "No matching task found for '\(taskTitle)'")
-    }
-}
-
-// MARK: - Open Chat Intent (for widgets)
-
-struct OpenChatIntent: AppIntent {
-    nonisolated static let title: LocalizedStringResource = "Open Chat"
-    nonisolated static let description: IntentDescription = "Opens the openguin chat"
-    static let openAppWhenRun: Bool = true
-
-    func perform() async throws -> some IntentResult {
-        NotificationCenter.default.post(name: .openChatFromNotification, object: nil)
-        return .result()
-    }
-}
-
-// MARK: - Open Tasks Intent (for widgets)
-
-struct OpenTasksIntent: AppIntent {
-    nonisolated static let title: LocalizedStringResource = "Open Tasks"
-    nonisolated static let description: IntentDescription = "Opens the openguin tasks view"
-    static let openAppWhenRun: Bool = true
-
-    func perform() async throws -> some IntentResult {
-        NotificationCenter.default.post(name: .openTasksTab, object: nil)
-        return .result()
-    }
-}
-
-// MARK: - Shortcuts Provider
-
-struct OpenGuinShortcutsProvider: AppShortcutsProvider {
+struct OpenGuinShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: OpenOpenGuinIntent(),
-            phrases: [
-                "Open \(.applicationName)",
-                "Launch \(.applicationName)"
-            ],
-            shortTitle: "Open openguin",
-            systemImageName: "message"
+            phrases: ["Open \(.applicationName)", "Chat with \(.applicationName)"],
+            shortTitle: "Open Openguin",
+            systemImageName: "bubble.left.and.bubble.right.fill"
         )
         AppShortcut(
-            intent: AddTaskIntent(),
-            phrases: [
-                "Add a task in \(.applicationName)",
-                "Create a task in \(.applicationName)",
-                "Remind me in \(.applicationName)"
-            ],
-            shortTitle: "Add Task",
-            systemImageName: "plus.circle"
+            intent: CreateReminderIntent(),
+            phrases: ["Remind me with \(.applicationName)", "Add a reminder in \(.applicationName)"],
+            shortTitle: "Create Reminder",
+            systemImageName: "bell.fill"
         )
         AppShortcut(
-            intent: ListTasksIntent(),
-            phrases: [
-                "Show my tasks in \(.applicationName)",
-                "List tasks in \(.applicationName)",
-                "What do I need to do in \(.applicationName)"
-            ],
-            shortTitle: "List Tasks",
-            systemImageName: "checklist"
-        )
-        AppShortcut(
-            intent: CompleteTaskIntent(),
-            phrases: [
-                "Complete a task in \(.applicationName)",
-                "Mark task done in \(.applicationName)"
-            ],
-            shortTitle: "Complete Task",
-            systemImageName: "checkmark.circle"
+            intent: CreateCalendarEventIntent(),
+            phrases: ["Add event with \(.applicationName)", "Create calendar event in \(.applicationName)"],
+            shortTitle: "Create Event",
+            systemImageName: "calendar.badge.plus"
         )
     }
 }

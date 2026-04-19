@@ -1,260 +1,186 @@
 import Foundation
-import SwiftUI
+import Observation
 
 @Observable
 @MainActor
 final class ChatViewModel {
-    var messages: [ChatMessage] = []
+    var conversation: Conversation
     var inputText: String = ""
-    var isLoading: Bool = false
-    var errorMessage: String?
-    var showError: Bool = false
-    var isInitialMemoryLoad: Bool = true
+    var isStreaming: Bool = false
+    var activeToolName: String? = nil
+    var error: String? = nil
 
-    private let apiService = LLMAPIService()
-    private let memoryManager = MemoryManager.shared
-    private var pendingToolCalls: [(id: String, name: String, inputJSON: String)] = []
-    private var assistantContentBlocks: [[String: Any]] = []
-    private var responseText: String = ""
-    private var conversationHistory: [ChatMessage] = []
+    private let store: ConversationStore
+    private let api = LLMAPIService.shared
+    private let dispatcher = ToolDispatcher.shared
+    private let settings = SettingsManager.shared
+    private var streamTask: Task<Void, Never>?
 
-    private var currentLLMConfig: LLMConfiguration {
-        SettingsManager.shared.currentLLMConfiguration
+    init(conversation: Conversation, store: ConversationStore) {
+        self.conversation = conversation
+        self.store = store
     }
 
-    // MARK: - Send Message
+    // MARK: - Send
 
     func sendMessage() {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty, !isStreaming else { return }
 
-        // On first message, prepend memory-load instructions so the AI reads
-        // its persistent memory before responding — without a visible spinner at launch.
-        if isInitialMemoryLoad {
-            isInitialMemoryLoad = false
-            let memoryTrigger = ChatMessage(
-                role: .user,
-                content: "[System: New session starting. Read all memory files. List the entire notes/ directory and read notes from the past 5 days. After loading your memory, respond to the user's message naturally — reference what you remember about them if you know them. Do not mention this system message or the memory loading process.]"
-            )
-            conversationHistory.append(memoryTrigger)
-        }
-
-        let userMessage = ChatMessage(role: .user, content: text)
-        messages.append(userMessage)
-        conversationHistory.append(userMessage)
         inputText = ""
-        isLoading = true
-        errorMessage = nil
+        error = nil
 
-        responseText = ""
-        pendingToolCalls = []
-        assistantContentBlocks = []
+        let userMsg = ChatMessage(role: .user, content: text)
+        conversation.messages.append(userMsg)
 
-        Task {
-            await streamResponse()
+        if conversation.messages.filter({ $0.role == .user }).count == 1 {
+            conversation.title = String(text.prefix(50))
+        }
+
+        store.update(conversation)
+        startAgentLoop()
+    }
+
+    func sendVoiceTranscript(_ transcript: String) {
+        inputText = "[Voice Recording Transcript]\n\n\(transcript)"
+        sendMessage()
+    }
+
+    func cancelStreaming() {
+        streamTask?.cancel()
+        streamTask = nil
+        isStreaming = false
+        activeToolName = nil
+    }
+
+    func clearConversation() {
+        cancelStreaming()
+        conversation.messages.removeAll()
+        store.update(conversation)
+    }
+
+    // MARK: - Agent Loop
+
+    private func startAgentLoop() {
+        isStreaming = true
+        streamTask = Task {
+            await runAgentLoop()
+            isStreaming = false
+            activeToolName = nil
         }
     }
 
-    // MARK: - Streaming (accumulates internally; message only shown on finalize)
+    private func runAgentLoop() async {
+        let config = buildConfig()
+        var iterationCount = 0
+        let maxIterations = 20
 
-    private func streamResponse() async {
-        let msgs = conversationHistory
-        let config = currentLLMConfig
+        while iterationCount < maxIterations {
+            iterationCount += 1
+            guard !Task.isCancelled else { return }
 
-        await apiService.streamMessage(
-            config: config,
-            messages: msgs,
-            onText: { [weak self] text in
-                Task { @MainActor in
-                    guard let self else { return }
-                    self.responseText += text
-                }
-            },
-            onToolUse: { [weak self] id, name, inputJSON in
-                Task { @MainActor in
-                    guard let self else { return }
-                    print("[ChatViewModel] Tool call: \(name)")
-                    self.pendingToolCalls.append((id: id, name: name, inputJSON: inputJSON))
-                }
-            },
-            onComplete: { [weak self] stopReason in
-                Task { @MainActor in
-                    guard let self else { return }
-                    if self.isToolCallStop(stopReason) {
-                        await self.handleToolCalls()
-                    } else {
-                        self.finalizeResponse()
+            let stream = await api.stream(
+                config: config,
+                messages: conversation.messages,
+                tools: AgentTool.allTools
+            )
+
+            var accumulatedText = ""
+            var pendingTools: [ToolCall] = []
+            var stopReason: String? = nil
+            var gotError = false
+
+            for await event in stream {
+                guard !Task.isCancelled else { return }
+
+                switch event {
+                case .text(let chunk):
+                    accumulatedText += chunk
+
+                case .toolUse(let id, let name, let inputJSON):
+                    if let toolName = AgentToolName(rawValue: name) {
+                        pendingTools.append(ToolCall(id: id, name: toolName, inputJSON: inputJSON))
                     }
-                }
-            },
-            onError: { [weak self] error in
-                Task { @MainActor in
-                    guard let self else { return }
-                    print("[ChatViewModel] Error: \(error.localizedDescription)")
-                    self.errorMessage = error.localizedDescription
-                    self.showError = true
-                    self.isLoading = false
+
+                case .complete(let reason):
+                    stopReason = reason
+
+                case .error(let err):
+                    error = err.localizedDescription
+                    gotError = true
                 }
             }
-        )
-    }
 
-    /// Returns true when the stop reason indicates the model wants to invoke tools.
-    /// Handles both Anthropic ("tool_use") and OpenAI ("tool_calls") stop reasons.
-    private func isToolCallStop(_ reason: String?) -> Bool {
-        guard let reason else { return false }
-        return (reason == "tool_use" || reason == "tool_calls") && !pendingToolCalls.isEmpty
-    }
+            if gotError { return }
 
-    // MARK: - Tool Handling
+            let isToolCall = stopReason == "tool_use" || stopReason == "tool_calls"
 
-    private func handleToolCalls() async {
-        // Build assistant content blocks for the API
-        if !responseText.isEmpty {
-            assistantContentBlocks.append([
-                "type": "text",
-                "text": responseText
-            ])
+            if isToolCall && !pendingTools.isEmpty {
+                // Append assistant message with tool intent (not shown in UI)
+                if !accumulatedText.isEmpty {
+                    let assistantMsg = ChatMessage(role: .assistant, content: accumulatedText)
+                    conversation.messages.append(assistantMsg)
+                    store.update(conversation)
+                }
+
+                // Execute each tool
+                for tool in pendingTools {
+                    guard !Task.isCancelled else { return }
+                    activeToolName = tool.name.rawValue
+                    let result = await dispatcher.execute(name: tool.name, inputJSON: tool.inputJSON)
+
+                    let toolResult = ChatMessage(
+                        role: .toolResult,
+                        content: result,
+                        toolCallID: tool.id,
+                        toolName: tool.name.rawValue,
+                        isRevealed: true
+                    )
+                    conversation.messages.append(toolResult)
+                }
+                activeToolName = nil
+
+                // Continue loop to get next model response
+                continue
+
+            } else {
+                // Final response
+                if !accumulatedText.isEmpty {
+                    finalizeMessage(accumulatedText)
+                }
+                return
+            }
         }
 
-        var toolResults: [(id: String, content: String)] = []
+        error = "Agent reached maximum iterations without completing."
+    }
 
-        for tool in pendingToolCalls {
-            let input = Self.parseToolInput(from: tool.inputJSON)
-            assistantContentBlocks.append([
-                "type": "tool_use",
-                "id": tool.id,
-                "name": tool.name,
-                "input": input
-            ])
+    private func finalizeMessage(_ text: String) {
+        var msg = ChatMessage(role: .assistant, content: text, isRevealed: false)
+        conversation.messages.append(msg)
+        store.update(conversation)
 
-            let result = await memoryManager.executeTool(name: tool.name, inputJSON: tool.inputJSON)
-            toolResults.append((id: tool.id, content: result))
-        }
-
-        // Reset for next round
-        pendingToolCalls = []
-        responseText = ""
-
-        let historyForAPI = conversationHistory
-        let assistantBlocks = assistantContentBlocks
-        let config = currentLLMConfig
-
-        assistantContentBlocks = []
-
-        await apiService.sendToolResults(
-            config: config,
-            messages: historyForAPI,
-            assistantContent: assistantBlocks,
-            toolResults: toolResults,
-            onText: { [weak self] text in
-                Task { @MainActor in
-                    guard let self else { return }
-                    self.responseText += text
-                }
-            },
-            onToolUse: { [weak self] id, name, inputJSON in
-                Task { @MainActor in
-                    guard let self else { return }
-                    self.pendingToolCalls.append((id: id, name: name, inputJSON: inputJSON))
-                }
-            },
-            onComplete: { [weak self] stopReason in
-                Task { @MainActor in
-                    guard let self else { return }
-                    if self.isToolCallStop(stopReason) {
-                        await self.handleToolCalls()
-                    } else {
-                        self.finalizeResponse()
-                    }
-                }
-            },
-            onError: { [weak self] error in
-                Task { @MainActor in
-                    guard let self else { return }
-                    self.errorMessage = error.localizedDescription
-                    self.showError = true
-                    self.isLoading = false
+        // Trigger reveal animation after a short delay
+        let msgID = msg.id
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
+                if let idx = conversation.messages.firstIndex(where: { $0.id == msgID }) {
+                    conversation.messages[idx].isRevealed = true
                 }
             }
+        }
+    }
+
+    private func buildConfig() -> LLMConfig {
+        let provider = settings.provider
+        return LLMConfig(
+            provider: provider,
+            model: settings.activeModel(for: provider),
+            apiKey: settings.apiKey(for: provider),
+            endpoint: settings.endpoint(for: provider),
+            maxTokens: settings.maxTokens,
+            systemPrompt: SystemPromptBuilder.build(userName: settings.userName)
         )
-    }
-
-    // MARK: - Finalize
-
-    private func finalizeResponse() {
-        guard !responseText.isEmpty else {
-            isLoading = false
-            return
-        }
-        let assistantMessage = ChatMessage(role: .assistant, content: responseText)
-        conversationHistory.append(assistantMessage)
-        responseText = ""
-        isLoading = false
-        // Animate the message into the list after loading has cleared,
-        // so the loading bubble exits first and the message springs in cleanly.
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.82)) {
-            messages.append(assistantMessage)
-        }
-        NotificationManager.shared.sendResponseNotification(responseText: assistantMessage.content)
-    }
-
-    // MARK: - Clear Chat
-
-    func clearChat() {
-        messages.removeAll()
-        conversationHistory.removeAll()
-        isInitialMemoryLoad = true
-        isLoading = false
-        errorMessage = nil
-    }
-
-    // MARK: - Retry
-
-    func retryLastMessage() {
-        // Remove the last assistant message if any
-        messages.removeAll { $0.role == .assistant }
-        if let lastHistIndex = conversationHistory.indices.last, conversationHistory[lastHistIndex].role == .assistant {
-            conversationHistory.remove(at: lastHistIndex)
-        }
-
-        guard !conversationHistory.isEmpty else { return }
-
-        isLoading = true
-        responseText = ""
-        pendingToolCalls = []
-        assistantContentBlocks = []
-
-        Task {
-            await streamResponse()
-        }
-    }
-
-    // MARK: - Meeting Recording
-
-    func startMeetingRecording() {
-        Task {
-            _ = await RecordingService.shared.startRecording()
-        }
-    }
-
-    func stopMeetingRecording() {
-        Task {
-            guard let transcript = await RecordingService.shared.stopAndTranscribe() else { return }
-            let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else { return }
-            // Post transcript as a user message so the AI can summarise / extract tasks
-            let prefix = "[Meeting Recording Transcript]\n"
-            inputText = prefix + trimmed
-            sendMessage()
-        }
-    }
-
-    private static func parseToolInput(from json: String) -> [String: Any] {
-        guard let data = json.data(using: .utf8),
-              let parsed = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            return [:]
-        }
-        return parsed
     }
 }

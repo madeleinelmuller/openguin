@@ -3,25 +3,20 @@ import SwiftUI
 import AppIntents
 
 struct OpenGuinControlWidget: ControlWidget {
-    let kind = "OpenGuinControl"
-
     var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(kind: kind) {
-            ControlWidgetButton(action: LaunchOpenGuinIntent()) {
-                Label("openguin", systemImage: "message")
+        StaticControlConfiguration(kind: "OpenGuinControl") {
+            ControlWidgetButton(action: OpenChatIntent()) {
+                Label("Open Openguin", systemImage: "bubble.left.and.bubble.right.fill")
             }
         }
-        .displayName("Open openguin")
-        .description("Quickly open openguin chat.")
+        .displayName("Openguin")
+        .description("Open Openguin from Control Center.")
     }
 }
 
-// MARK: - Launch Intent
-
-struct LaunchOpenGuinIntent: AppIntent {
-    nonisolated static let title: LocalizedStringResource = "Open openguin"
-    nonisolated static let description: IntentDescription = "Opens the openguin app"
-    static let openAppWhenRun: Bool = true
+struct OpenChatIntent: AppIntent {
+    static var title: LocalizedStringResource = "Open Openguin"
+    static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
         .result()

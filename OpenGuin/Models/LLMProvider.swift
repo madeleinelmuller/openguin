@@ -1,169 +1,73 @@
 import Foundation
 
-// MARK: - Provider Types
-
-enum LLMProvider: String, CaseIterable, Identifiable, Sendable {
+enum LLMProvider: String, CaseIterable, Codable, Sendable, Identifiable {
     case anthropic
-    case openai
-    case lmstudio
+    case openAI
+    case ollama
+    case lmStudio
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .anthropic: return "Anthropic (Claude)"
-        case .openai: return "OpenAI"
-        case .lmstudio: return "LM Studio"
+        case .anthropic: "Anthropic"
+        case .openAI: "OpenAI"
+        case .ollama: "Ollama"
+        case .lmStudio: "LM Studio"
         }
     }
 
-    var description: String {
+    var defaultModel: String {
         switch self {
-        case .anthropic: return "Claude - Most capable, with extended thinking"
-        case .openai: return "GPT-4, GPT-3.5 - OpenAI's models"
-        case .lmstudio: return "Local models via LM Studio"
+        case .anthropic: "claude-sonnet-4-6"
+        case .openAI: "gpt-4o"
+        case .ollama: "llama3.2"
+        case .lmStudio: "local-model"
         }
     }
 
-    var requiresCustomEndpoint: Bool {
-        self == .lmstudio
+    var availableModels: [String] {
+        switch self {
+        case .anthropic:
+            return ["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5-20251001"]
+        case .openAI:
+            return ["gpt-4o", "gpt-4o-mini", "o1", "o3-mini"]
+        case .ollama:
+            return ["llama3.2", "llama3.1", "mistral", "qwen2.5", "deepseek-r1"]
+        case .lmStudio:
+            return ["local-model"]
+        }
+    }
+
+    var isOpenAICompatible: Bool {
+        switch self {
+        case .anthropic: false
+        case .openAI, .ollama, .lmStudio: true
+        }
     }
 
     var defaultEndpoint: String {
         switch self {
-        case .anthropic: return "https://api.anthropic.com/v1/messages"
-        case .openai: return "https://api.openai.com/v1/chat/completions"
-        case .lmstudio: return "http://127.0.0.1:1234/v1/chat/completions"
+        case .anthropic: "https://api.anthropic.com"
+        case .openAI: "https://api.openai.com"
+        case .ollama: "http://localhost:11434"
+        case .lmStudio: "http://localhost:1234"
         }
     }
 
-    var supportsOAuth: Bool {
-        self == .anthropic || self == .openai
-    }
-
-    var oauthURL: URL? {
+    var chatPath: String {
         switch self {
-        case .anthropic:
-            return URL(string: "https://console.anthropic.com")
-        case .openai:
-            return URL(string: "https://platform.openai.com/account/api-keys")
-        default:
-            return nil
+        case .anthropic: "/v1/messages"
+        case .openAI: "/v1/chat/completions"
+        case .ollama: "/v1/chat/completions"
+        case .lmStudio: "/v1/chat/completions"
         }
     }
-}
 
-// MARK: - Model Types
-
-enum AnthropicModel: String, CaseIterable, Identifiable, Sendable {
-    case haiku45 = "claude-haiku-4-5"
-    case sonnet46 = "claude-sonnet-4-6"
-    case opus46 = "claude-opus-4-6"
-
-    var id: String { rawValue }
-
-    var displayName: String {
+    var requiresAPIKey: Bool {
         switch self {
-        case .haiku45: return "Claude Haiku 4.5"
-        case .sonnet46: return "Claude Sonnet 4.6"
-        case .opus46: return "Claude Opus 4.6"
+        case .anthropic, .openAI: true
+        case .ollama, .lmStudio: false
         }
-    }
-
-    var description: String {
-        switch self {
-        case .haiku45: return "Fast & efficient"
-        case .sonnet46: return "Latest balanced flagship"
-        case .opus46: return "Highest capability"
-        }
-    }
-}
-
-enum OpenAIModel: String, CaseIterable, Identifiable, Sendable {
-    case gpt4o = "gpt-4o"
-    case gpt4oMini = "gpt-4o-mini"
-    case gpt4turbo = "gpt-4-turbo"
-    case gpt4 = "gpt-4"
-    case gpt35turbo = "gpt-3.5-turbo"
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .gpt4o: return "GPT-4o"
-        case .gpt4oMini: return "GPT-4o Mini"
-        case .gpt4turbo: return "GPT-4 Turbo"
-        case .gpt4: return "GPT-4"
-        case .gpt35turbo: return "GPT-3.5 Turbo"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .gpt4o: return "Latest flagship model"
-        case .gpt4oMini: return "Fast & affordable"
-        case .gpt4turbo: return "Most capable (legacy)"
-        case .gpt4: return "Highly capable (legacy)"
-        case .gpt35turbo: return "Fast & efficient (legacy)"
-        }
-    }
-}
-
-// MARK: - Configuration Types
-
-struct LLMConfiguration: Sendable {
-    let provider: LLMProvider
-    let apiKey: String
-    let endpoint: String?
-    let modelId: String
-    let customModelName: String?
-
-    var effectiveEndpoint: String {
-        let base = endpoint ?? provider.defaultEndpoint
-        if provider == .lmstudio {
-            return Self.normalizeLMStudioEndpoint(base)
-        }
-        return base
-    }
-
-    var effectiveModelName: String {
-        customModelName ?? modelId
-    }
-}
-
-struct LLMOptions: Sendable {
-    let temperature: Double = 0.7
-    let maxTokens: Int = 4096
-    let topP: Double = 1.0
-    let frequencyPenalty: Double = 0.0
-    let presencePenalty: Double = 0.0
-}
-
-extension LLMConfiguration {
-    fileprivate static func normalizeLMStudioEndpoint(_ endpoint: String) -> String {
-        var trimmed = endpoint.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return "http://127.0.0.1:1234/v1/chat/completions"
-        }
-
-        // Auto-add http:// scheme if the user just entered IP:port or hostname:port
-        if !trimmed.hasPrefix("http://") && !trimmed.hasPrefix("https://") {
-            trimmed = "http://\(trimmed)"
-        }
-
-        guard var components = URLComponents(string: trimmed) else { return trimmed }
-
-        let path = components.path.trimmingCharacters(in: .whitespacesAndNewlines)
-        if path.isEmpty || path == "/" {
-            components.path = "/v1/chat/completions"
-            return components.string ?? trimmed
-        }
-
-        if path.hasSuffix("/completions") {
-            return components.string ?? trimmed
-        }
-
-        components.path = path.hasSuffix("/") ? "\(path)completions" : "\(path)/completions"
-        return components.string ?? trimmed
     }
 }

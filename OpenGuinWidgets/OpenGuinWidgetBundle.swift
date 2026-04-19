@@ -4,8 +4,7 @@ import SwiftUI
 @main
 struct OpenGuinWidgetBundle: WidgetBundle {
     var body: some Widget {
-        TasksWidget()
-        TasksLockScreenWidget()
+        OpenGuinLockScreenWidget()
         OpenGuinControlWidget()
         RecordingLiveActivity()
     }

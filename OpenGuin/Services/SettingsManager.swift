@@ -1,158 +1,96 @@
 import Foundation
-import SwiftUI
+import Observation
 
-@MainActor
 @Observable
-final class SettingsManager {
+final class SettingsManager: @unchecked Sendable {
     static let shared = SettingsManager()
 
-    // MARK: - Provider Settings Keys
-    private let providerKey = "llm_provider"
-    private let anthropicKeyKey = "anthropic_api_key"
-    private let openaiKeyKey = "openai_api_key"
-    private let customEndpointKey = "custom_endpoint"
-    private let customModelNameKey = "custom_model_name"
+    private let defaults = UserDefaults.standard
 
-    // MARK: - Model Selection Keys
-    private let anthropicModelKey = "anthropic_model"
-    private let openaiModelKey = "openai_model"
+    var provider: LLMProvider {
+        get { LLMProvider(rawValue: defaults.string(forKey: "provider") ?? "") ?? .anthropic }
+        set { defaults.set(newValue.rawValue, forKey: "provider") }
+    }
 
-    // MARK: - Other Settings Keys
-    private let hapticKey = "haptic_feedback"
+    var model: String {
+        get { defaults.string(forKey: "model") ?? provider.defaultModel }
+        set { defaults.set(newValue, forKey: "model") }
+    }
 
-    // MARK: - Provider & API Keys
-    var selectedProvider: LLMProvider {
-        didSet {
-            UserDefaults.standard.set(selectedProvider.rawValue, forKey: providerKey)
+    var anthropicKey: String {
+        get { defaults.string(forKey: "anthropicKey") ?? "" }
+        set { defaults.set(newValue, forKey: "anthropicKey") }
+    }
+
+    var openAIKey: String {
+        get { defaults.string(forKey: "openAIKey") ?? "" }
+        set { defaults.set(newValue, forKey: "openAIKey") }
+    }
+
+    var ollamaEndpoint: String {
+        get { defaults.string(forKey: "ollamaEndpoint") ?? "http://localhost:11434" }
+        set { defaults.set(newValue, forKey: "ollamaEndpoint") }
+    }
+
+    var ollamaModel: String {
+        get { defaults.string(forKey: "ollamaModel") ?? "llama3.2" }
+        set { defaults.set(newValue, forKey: "ollamaModel") }
+    }
+
+    var lmStudioEndpoint: String {
+        get { defaults.string(forKey: "lmStudioEndpoint") ?? "http://localhost:1234" }
+        set { defaults.set(newValue, forKey: "lmStudioEndpoint") }
+    }
+
+    var lmStudioModel: String {
+        get { defaults.string(forKey: "lmStudioModel") ?? "local-model" }
+        set { defaults.set(newValue, forKey: "lmStudioModel") }
+    }
+
+    var userName: String {
+        get { defaults.string(forKey: "userName") ?? "" }
+        set { defaults.set(newValue, forKey: "userName") }
+    }
+
+    var hasCompletedOnboarding: Bool {
+        get { defaults.bool(forKey: "hasCompletedOnboarding") }
+        set { defaults.set(newValue, forKey: "hasCompletedOnboarding") }
+    }
+
+    var maxTokens: Int {
+        get { defaults.integer(forKey: "maxTokens").nonZero ?? 8192 }
+        set { defaults.set(newValue, forKey: "maxTokens") }
+    }
+
+    func apiKey(for provider: LLMProvider) -> String {
+        switch provider {
+        case .anthropic: anthropicKey
+        case .openAI: openAIKey
+        case .ollama, .lmStudio: ""
         }
     }
 
-    var anthropicAPIKey: String {
-        didSet {
-            UserDefaults.standard.set(anthropicAPIKey, forKey: anthropicKeyKey)
+    func endpoint(for provider: LLMProvider) -> String {
+        switch provider {
+        case .anthropic: "https://api.anthropic.com"
+        case .openAI: "https://api.openai.com"
+        case .ollama: ollamaEndpoint
+        case .lmStudio: lmStudioEndpoint
         }
     }
 
-    var openaiAPIKey: String {
-        didSet {
-            UserDefaults.standard.set(openaiAPIKey, forKey: openaiKeyKey)
+    func activeModel(for provider: LLMProvider) -> String {
+        switch provider {
+        case .anthropic: model.isEmpty ? provider.defaultModel : model
+        case .openAI: model.isEmpty ? provider.defaultModel : model
+        case .ollama: ollamaModel
+        case .lmStudio: lmStudioModel
         }
     }
 
-    var customEndpoint: String {
-        didSet {
-            UserDefaults.standard.set(customEndpoint, forKey: customEndpointKey)
-        }
-    }
+    private init() {}
+}
 
-    var customModelName: String {
-        didSet {
-            UserDefaults.standard.set(customModelName, forKey: customModelNameKey)
-        }
-    }
-
-    // MARK: - Model Selection
-    var selectedAnthropicModel: AnthropicModel {
-        didSet {
-            UserDefaults.standard.set(selectedAnthropicModel.rawValue, forKey: anthropicModelKey)
-        }
-    }
-
-    var selectedOpenAIModel: OpenAIModel {
-        didSet {
-            UserDefaults.standard.set(selectedOpenAIModel.rawValue, forKey: openaiModelKey)
-        }
-    }
-
-    // MARK: - Other Settings
-    var hapticFeedbackEnabled: Bool {
-        didSet {
-            UserDefaults.standard.set(hapticFeedbackEnabled, forKey: hapticKey)
-        }
-    }
-
-    // MARK: - Computed Properties
-    var effectiveAPIKey: String {
-        switch selectedProvider {
-        case .anthropic:
-            return anthropicAPIKey.isEmpty ? Self.developmentAPIKey : anthropicAPIKey
-        case .openai:
-            return openaiAPIKey
-        case .lmstudio:
-            return "lmstudio" // LMStudio doesn't require authentication
-        }
-    }
-
-    var hasValidAPIKey: Bool {
-        switch selectedProvider {
-        case .anthropic:
-            return !effectiveAPIKey.isEmpty
-        case .openai:
-            return !openaiAPIKey.isEmpty
-        case .lmstudio:
-            return true // Always valid — falls back to default local LM Studio endpoint
-        }
-    }
-
-    var isUsingDevelopmentKey: Bool {
-        selectedProvider == .anthropic && anthropicAPIKey.isEmpty && !Self.developmentAPIKey.isEmpty
-    }
-
-    var currentLLMConfiguration: LLMConfiguration {
-        let apiKey: String
-        let modelId: String
-
-        switch selectedProvider {
-        case .anthropic:
-            apiKey = effectiveAPIKey
-            modelId = selectedAnthropicModel.rawValue
-        case .openai:
-            apiKey = openaiAPIKey
-            modelId = selectedOpenAIModel.rawValue
-        case .lmstudio:
-            apiKey = "lmstudio" // LMStudio doesn't need real auth; any non-empty value passes guard
-            modelId = customModelName.isEmpty ? "local-model" : customModelName
-        }
-
-        // Only pass a custom endpoint for LM Studio — Anthropic and OpenAI
-        // always use their official endpoints.
-        let endpoint: String? = selectedProvider == .lmstudio
-            ? (customEndpoint.isEmpty ? nil : customEndpoint)
-            : nil
-
-        return LLMConfiguration(
-            provider: selectedProvider,
-            apiKey: apiKey,
-            endpoint: endpoint,
-            modelId: modelId,
-            customModelName: customModelName.isEmpty ? nil : customModelName
-        )
-    }
-
-    /// Development API key from environment (set in Xcode scheme)
-    nonisolated private static let developmentAPIKey: String = {
-        ProcessInfo.processInfo.environment["API_KEY"] ?? ""
-    }()
-
-    private init() {
-        let providerRaw = UserDefaults.standard.string(forKey: providerKey) ?? LLMProvider.anthropic.rawValue
-        if providerRaw == "openaiCompatible" {
-            self.selectedProvider = .openai
-        } else {
-            self.selectedProvider = LLMProvider(rawValue: providerRaw) ?? .anthropic
-        }
-
-        self.anthropicAPIKey = UserDefaults.standard.string(forKey: anthropicKeyKey) ?? ""
-        self.openaiAPIKey = UserDefaults.standard.string(forKey: openaiKeyKey) ?? ""
-        self.customEndpoint = UserDefaults.standard.string(forKey: customEndpointKey) ?? ""
-        self.customModelName = UserDefaults.standard.string(forKey: customModelNameKey) ?? ""
-
-        let anthropicModelRaw = UserDefaults.standard.string(forKey: anthropicModelKey) ?? AnthropicModel.sonnet46.rawValue
-        self.selectedAnthropicModel = AnthropicModel(rawValue: anthropicModelRaw) ?? .sonnet46
-
-        let openaiModelRaw = UserDefaults.standard.string(forKey: openaiModelKey) ?? OpenAIModel.gpt4turbo.rawValue
-        self.selectedOpenAIModel = OpenAIModel(rawValue: openaiModelRaw) ?? .gpt4turbo
-
-        self.hapticFeedbackEnabled = UserDefaults.standard.object(forKey: hapticKey) as? Bool ?? true
-    }
+private extension Int {
+    var nonZero: Int? { self == 0 ? nil : self }
 }

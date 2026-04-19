@@ -1,61 +1,33 @@
 import Foundation
-import Observation
 
-@Observable
-final class ChatMessage: Identifiable, Equatable, Codable {
+struct ChatMessage: Identifiable, Codable, Sendable, Equatable {
     let id: UUID
     let role: MessageRole
     var content: String
     let timestamp: Date
+    var toolCallID: String?
+    var toolName: String?
+    var isRevealed: Bool
 
-    enum MessageRole: String, Codable {
-        case user
-        case assistant
-        case system
-    }
-
-    init(
-        id: UUID = UUID(),
-        role: MessageRole,
-        content: String,
-        timestamp: Date = Date()
-    ) {
+    init(id: UUID = UUID(), role: MessageRole, content: String, timestamp: Date = .now,
+         toolCallID: String? = nil, toolName: String? = nil, isRevealed: Bool = true) {
         self.id = id
         self.role = role
         self.content = content
         self.timestamp = timestamp
+        self.toolCallID = toolCallID
+        self.toolName = toolName
+        self.isRevealed = isRevealed
     }
 
-    static func == (lhs: ChatMessage, rhs: ChatMessage) -> Bool {
-        lhs.id == rhs.id
+    enum MessageRole: String, Codable, Sendable {
+        case user
+        case assistant
+        case system
+        case toolResult
     }
 
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-
-    // MARK: - Codable
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case role
-        case content
-        case timestamp
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(role, forKey: .role)
-        try container.encode(content, forKey: .content)
-        try container.encode(timestamp, forKey: .timestamp)
-    }
-
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        role = try container.decode(MessageRole.self, forKey: .role)
-        content = try container.decode(String.self, forKey: .content)
-        timestamp = try container.decode(Date.self, forKey: .timestamp)
+    var isVisibleToUser: Bool {
+        role == .user || role == .assistant
     }
 }
