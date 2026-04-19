@@ -4,9 +4,9 @@ import Foundation
 // MARK: - Open Chat
 
 struct OpenOpenGuinIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Openguin"
-    static var description = IntentDescription("Opens the Openguin chat.")
-    static var openAppWhenRun = true
+    static let title: LocalizedStringResource = "Open Openguin"
+    static let description = IntentDescription("Opens the Openguin chat.")
+    static let openAppWhenRun = true
 
     func perform() async throws -> some IntentResult {
         NotificationCenter.default.post(name: .switchToChat, object: nil)
@@ -17,8 +17,8 @@ struct OpenOpenGuinIntent: AppIntent {
 // MARK: - Create Reminder via Shortcut
 
 struct CreateReminderIntent: AppIntent {
-    static var title: LocalizedStringResource = "Create Reminder"
-    static var description = IntentDescription("Creates a reminder via Openguin.")
+    static let title: LocalizedStringResource = "Create Reminder"
+    static let description = IntentDescription("Creates a reminder via Openguin.")
 
     @Parameter(title: "Title") var title: String
     @Parameter(title: "Due Date") var dueDate: Date?
@@ -38,8 +38,8 @@ struct CreateReminderIntent: AppIntent {
 // MARK: - Create Calendar Event via Shortcut
 
 struct CreateCalendarEventIntent: AppIntent {
-    static var title: LocalizedStringResource = "Create Calendar Event"
-    static var description = IntentDescription("Creates a calendar event via Openguin.")
+    static let title: LocalizedStringResource = "Create Calendar Event"
+    static let description = IntentDescription("Creates a calendar event via Openguin.")
 
     @Parameter(title: "Title") var title: String
     @Parameter(title: "Start Date") var startDate: Date

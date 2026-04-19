@@ -16,7 +16,7 @@ actor MemoryManager {
         initializeDefaultFiles()
     }
 
-    private func initializeDefaultFiles() {
+    nonisolated private func initializeDefaultFiles() {
         let soulPath = root.appendingPathComponent("SOUL.md")
         if !FileManager.default.fileExists(atPath: soulPath.path) {
             let soul = """

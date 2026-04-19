@@ -26,7 +26,7 @@ enum AgentToolName: String, CaseIterable, Sendable {
     case getUserInfo = "get_user_info"
 }
 
-struct AgentTool: Sendable {
+struct AgentTool: @unchecked Sendable {
     let name: AgentToolName
     let description: String
     let inputSchema: [String: Any]

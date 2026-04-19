@@ -179,15 +179,3 @@ struct VoiceRecorderOverlay: View {
         .ignoresSafeArea()
     }
 }
-
-private extension RecordingState {
-    var description: String {
-        switch self {
-        case .idle: "idle"
-        case .recording: "recording"
-        case .transcribing: "transcribing"
-        case .done: "done"
-        case .failed: "failed"
-        }
-    }
-}
