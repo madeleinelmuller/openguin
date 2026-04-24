@@ -183,6 +183,28 @@ extension AgentTool {
                 "required": ["language", "code"]
             ]
         ),
+        // MARK: Location / Weather
+        AgentTool(
+            name: .getLocation,
+            description: "Get the user's current location (city, region, coordinates). Requires location permission.",
+            inputSchema: [
+                "type": "object",
+                "properties": [:],
+                "required": []
+            ]
+        ),
+        AgentTool(
+            name: .getWeather,
+            description: "Get current weather, today's forecast, and next few hours for a location. Uses the user's current location if latitude/longitude are omitted.",
+            inputSchema: [
+                "type": "object",
+                "properties": [
+                    "latitude": ["type": "number", "description": "Optional latitude. Omit to use the user's current location."],
+                    "longitude": ["type": "number", "description": "Optional longitude. Omit to use the user's current location."]
+                ],
+                "required": []
+            ]
+        ),
         // MARK: System
         AgentTool(
             name: .getCurrentTime,

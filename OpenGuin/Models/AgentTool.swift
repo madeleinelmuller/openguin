@@ -21,6 +21,9 @@ enum AgentToolName: String, CaseIterable, Sendable {
     case fetchURL = "fetch_url"
     // Code
     case executeCode = "execute_code"
+    // Location / Weather
+    case getLocation = "get_location"
+    case getWeather = "get_weather"
     // System
     case getCurrentTime = "get_current_time"
     case getUserInfo = "get_user_info"
