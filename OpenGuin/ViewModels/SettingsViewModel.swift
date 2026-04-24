@@ -8,21 +8,12 @@ final class SettingsViewModel {
 
     var provider: LLMProvider {
         get { settings.provider }
-        set {
-            settings.provider = newValue
-            model = newValue.defaultModel
-        }
+        set { settings.provider = newValue }
     }
 
     var model: String {
         get { settings.activeModel(for: settings.provider) }
-        set {
-            switch settings.provider {
-            case .anthropic, .openAI: settings.model = newValue
-            case .ollama: settings.ollamaModel = newValue
-            case .lmStudio: settings.lmStudioModel = newValue
-            }
-        }
+        set { settings.setActiveModel(newValue, for: settings.provider) }
     }
 
     var anthropicKey: String {

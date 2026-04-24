@@ -20,7 +20,7 @@ extension View {
             case .regular:
                 self.glassEffect(.regular, in: shape)
             case .clear:
-                self.glassEffect(.regular.tint(.clear), in: shape)
+                self.glassEffect(.clear, in: shape)
             case .interactive:
                 self.glassEffect(.regular.interactive(), in: shape)
             }
