@@ -31,6 +31,7 @@ struct SettingsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            .background(Color.black)
             .navigationTitle("Settings")
             .toolbarBackground(.hidden, for: .navigationBar)
         }
