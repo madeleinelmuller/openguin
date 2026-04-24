@@ -34,7 +34,12 @@ actor LLMAPIService {
         AsyncStream { continuation in
             Task {
                 do {
-                    let url = URL(string: config.endpoint + "/v1/messages")!
+                    let base = config.provider.normalizedEndpoint(from: config.endpoint)
+                    guard let url = URL(string: base + config.provider.chatPath) else {
+                        continuation.yield(.error(LLMError.invalidEndpoint))
+                        continuation.finish()
+                        return
+                    }
                     var req = URLRequest(url: url)
                     req.httpMethod = "POST"
                     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -82,7 +87,15 @@ actor LLMAPIService {
 
                     guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                        continuation.yield(.error(LLMError.httpError(statusCode)))
+                        // Drain the body so we can surface a useful message
+                        var bodyBytes: [UInt8] = []
+                        bodyBytes.reserveCapacity(2048)
+                        for try await byte in bytes {
+                            bodyBytes.append(byte)
+                            if bodyBytes.count >= 2048 { break }
+                        }
+                        let body = String(bytes: bodyBytes, encoding: .utf8) ?? ""
+                        continuation.yield(.error(LLMError.httpErrorWithBody(statusCode, body, config.provider)))
                         continuation.finish()
                         return
                     }
@@ -161,7 +174,12 @@ actor LLMAPIService {
         AsyncStream { continuation in
             Task {
                 do {
-                    let url = URL(string: config.endpoint + "/v1/chat/completions")!
+                    let baseEndpoint = config.provider.normalizedEndpoint(from: config.endpoint)
+                    guard let url = URL(string: baseEndpoint + config.provider.chatPath) else {
+                        continuation.yield(.error(LLMError.invalidEndpoint))
+                        continuation.finish()
+                        return
+                    }
                     var req = URLRequest(url: url)
                     req.httpMethod = "POST"
                     req.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -207,7 +225,8 @@ actor LLMAPIService {
                     var body: [String: Any] = [
                         "model": config.model,
                         "messages": apiMessages,
-                        "stream": true
+                        "stream": true,
+                        "max_tokens": config.maxTokens
                     ]
                     if !toolBlocks.isEmpty {
                         body["tools"] = toolBlocks
@@ -220,7 +239,15 @@ actor LLMAPIService {
 
                     guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
                         let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                        continuation.yield(.error(LLMError.httpError(statusCode)))
+                        // Drain the body so we can surface a useful message
+                        var bodyBytes: [UInt8] = []
+                        bodyBytes.reserveCapacity(2048)
+                        for try await byte in bytes {
+                            bodyBytes.append(byte)
+                            if bodyBytes.count >= 2048 { break }
+                        }
+                        let body = String(bytes: bodyBytes, encoding: .utf8) ?? ""
+                        continuation.yield(.error(LLMError.httpErrorWithBody(statusCode, body, config.provider)))
                         continuation.finish()
                         return
                     }
@@ -282,16 +309,68 @@ actor LLMAPIService {
     }
 }
 
+private extension String {
+    func trimmingSuffix(_ suffix: Character) -> String {
+        var result = self
+        while result.last == suffix { result.removeLast() }
+        return result
+    }
+}
+
 enum LLMError: Error, LocalizedError {
     case httpError(Int)
+    case httpErrorWithBody(Int, String, LLMProvider)
     case noContent
     case invalidEndpoint
+    case missingAPIKey(LLMProvider)
 
     var errorDescription: String? {
         switch self {
-        case .httpError(let code): "API error \(code)"
-        case .noContent: "No content returned"
-        case .invalidEndpoint: "Invalid endpoint URL"
+        case .httpError(let code):
+            return "API error \(code)"
+        case .httpErrorWithBody(let code, let body, let provider):
+            return Self.describe(statusCode: code, body: body, provider: provider)
+        case .noContent:
+            return "No content returned"
+        case .invalidEndpoint:
+            return "Invalid endpoint URL"
+        case .missingAPIKey(let provider):
+            return "\(provider.displayName) API key is missing. Add it in Settings."
+        }
+    }
+
+    private static func describe(statusCode: Int, body: String, provider: LLMProvider) -> String {
+        // Try to pull a useful message out of common error shapes.
+        var detail: String? = nil
+        if let data = body.data(using: .utf8),
+           let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let err = obj["error"] as? [String: Any] {
+                detail = err["message"] as? String
+            } else if let msg = obj["message"] as? String {
+                detail = msg
+            } else if let err = obj["error"] as? String {
+                detail = err
+            }
+        }
+        if detail == nil, !body.isEmpty {
+            detail = String(body.prefix(240))
+        }
+
+        switch statusCode {
+        case 401, 403:
+            let hint = provider.requiresAPIKey
+                ? "Check your \(provider.displayName) API key in Settings."
+                : "Authorization failed."
+            return detail.map { "\(hint)\n\n\($0)" } ?? hint
+        case 404:
+            let hint = "Endpoint not found — is \(provider.displayName) running at this URL? Verify the endpoint in Settings."
+            return detail.map { "\(hint)\n\n\($0)" } ?? hint
+        case 429:
+            return detail.map { "Rate limited. \($0)" } ?? "Rate limited by \(provider.displayName)."
+        case 500...599:
+            return detail.map { "\(provider.displayName) server error (\(statusCode)). \($0)" } ?? "\(provider.displayName) server error (\(statusCode))."
+        default:
+            return detail.map { "\(provider.displayName) error \(statusCode): \($0)" } ?? "\(provider.displayName) error \(statusCode)"
         }
     }
 }

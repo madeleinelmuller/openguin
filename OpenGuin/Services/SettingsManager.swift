@@ -12,9 +12,32 @@ final class SettingsManager: @unchecked Sendable {
         set { defaults.set(newValue.rawValue, forKey: "provider") }
     }
 
-    var model: String {
-        get { defaults.string(forKey: "model") ?? provider.defaultModel }
-        set { defaults.set(newValue, forKey: "model") }
+    /// Legacy single model key — kept only so reads of previously-saved
+    /// `model` still work. New code should use per-provider storage.
+    private var legacyModel: String? {
+        defaults.string(forKey: "model")
+    }
+
+    var anthropicModel: String {
+        get {
+            if let stored = defaults.string(forKey: "anthropicModel") { return stored }
+            // Migrate from legacy shared key if it looks like an Anthropic model
+            if let legacy = legacyModel, legacy.hasPrefix("claude") { return legacy }
+            return LLMProvider.anthropic.defaultModel
+        }
+        set { defaults.set(newValue, forKey: "anthropicModel") }
+    }
+
+    var openAIModel: String {
+        get {
+            if let stored = defaults.string(forKey: "openAIModel") { return stored }
+            // Migrate from legacy shared key if it looks like an OpenAI model
+            if let legacy = legacyModel, legacy.hasPrefix("gpt") || legacy.hasPrefix("o1") || legacy.hasPrefix("o3") {
+                return legacy
+            }
+            return LLMProvider.openAI.defaultModel
+        }
+        set { defaults.set(newValue, forKey: "openAIModel") }
     }
 
     var anthropicKey: String {
@@ -81,10 +104,19 @@ final class SettingsManager: @unchecked Sendable {
 
     func activeModel(for provider: LLMProvider) -> String {
         switch provider {
-        case .anthropic: model.isEmpty ? provider.defaultModel : model
-        case .openAI: model.isEmpty ? provider.defaultModel : model
+        case .anthropic: anthropicModel
+        case .openAI: openAIModel
         case .ollama: ollamaModel
         case .lmStudio: lmStudioModel
+        }
+    }
+
+    func setActiveModel(_ value: String, for provider: LLMProvider) {
+        switch provider {
+        case .anthropic: anthropicModel = value
+        case .openAI: openAIModel = value
+        case .ollama: ollamaModel = value
+        case .lmStudio: lmStudioModel = value
         }
     }
 

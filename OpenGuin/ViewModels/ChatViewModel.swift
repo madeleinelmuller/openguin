@@ -27,6 +27,12 @@ final class ChatViewModel {
         let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isStreaming else { return }
 
+        // Preflight: surface missing credentials before hitting the wire.
+        if let configError = preflightConfigError() {
+            error = configError
+            return
+        }
+
         inputText = ""
         error = nil
 
@@ -170,6 +176,27 @@ final class ChatViewModel {
             conversation.messages[idx].isRevealed = true
             store.update(conversation)
         }
+    }
+
+    private func preflightConfigError() -> String? {
+        let provider = settings.provider
+        let model = settings.activeModel(for: provider)
+        if model.trimmingCharacters(in: .whitespaces).isEmpty {
+            return "No model selected for \(provider.displayName). Pick one in Settings."
+        }
+        if provider.requiresAPIKey {
+            let key = settings.apiKey(for: provider).trimmingCharacters(in: .whitespaces)
+            if key.isEmpty {
+                return "\(provider.displayName) API key is missing. Add it in Settings."
+            }
+        } else {
+            let raw = settings.endpoint(for: provider)
+            let normalized = provider.normalizedEndpoint(from: raw)
+            if URL(string: normalized) == nil {
+                return "\(provider.displayName) endpoint is invalid. Check Settings."
+            }
+        }
+        return nil
     }
 
     private func buildConfig() -> LLMConfig {

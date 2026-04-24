@@ -21,7 +21,7 @@ struct OnboardingProviderView: View {
                     .opacity(appeared ? 1 : 0)
                     .animation(.easeOut.delay(0.2), value: appeared)
 
-                Text("Choose a provider and add your API key, or use a local model with Ollama.")
+                Text("Pick a provider and add your API key, or connect to a local model.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -31,91 +31,41 @@ struct OnboardingProviderView: View {
             }
             .padding(.bottom, 32)
 
-            // Provider settings in a glass card
             GlassCard(cornerRadius: 24, padding: 20) {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        // Provider picker
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Provider")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .textCase(.uppercase)
-                            Picker("Provider", selection: $vm.provider) {
-                                ForEach(LLMProvider.allCases) { provider in
-                                    Text(provider.displayName).tag(provider)
-                                }
+                    VStack(alignment: .leading, spacing: 18) {
+                        sectionLabel("Provider")
+                        Picker("Provider", selection: $vm.provider) {
+                            ForEach(LLMProvider.allCases) { provider in
+                                Text(provider.displayName).tag(provider)
                             }
-                            .pickerStyle(.segmented)
+                        }
+                        .pickerStyle(.segmented)
+
+                        if vm.provider.hasCustomEndpoint {
+                            Divider()
+                            sectionLabel("Server")
+                            EndpointField(provider: vm.provider, endpoint: endpointBinding)
+                            Text("Just host and port — the \u{2018}/v1\u{2019} path is added automatically.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
 
                         Divider()
-
-                        // Model / endpoint fields
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Model")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                                .textCase(.uppercase)
-                            if vm.provider == .ollama {
-                                HStack {
-                                    Text("Endpoint")
-                                        .foregroundStyle(.primary)
-                                    Spacer()
-                                    TextField("http://localhost:11434", text: $vm.ollamaEndpoint)
-                                        .textInputAutocapitalization(.never)
-                                        .autocorrectionDisabled()
-                                        .multilineTextAlignment(.trailing)
-                                        .foregroundStyle(.secondary)
-                                }
-                                Divider()
-                                HStack {
-                                    Text("Model name")
-                                        .foregroundStyle(.primary)
-                                    Spacer()
-                                    TextField("Model name", text: $vm.model)
-                                        .textInputAutocapitalization(.never)
-                                        .autocorrectionDisabled()
-                                        .multilineTextAlignment(.trailing)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } else if vm.provider == .lmStudio {
-                                HStack {
-                                    Text("Endpoint")
-                                        .foregroundStyle(.primary)
-                                    Spacer()
-                                    TextField("http://localhost:1234", text: $vm.lmStudioEndpoint)
-                                        .textInputAutocapitalization(.never)
-                                        .autocorrectionDisabled()
-                                        .multilineTextAlignment(.trailing)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } else {
-                                Picker("Model", selection: $vm.model) {
-                                    ForEach(vm.provider.availableModels, id: \.self) { m in
-                                        Text(m).tag(m)
-                                    }
-                                }
-                            }
-                        }
+                        sectionLabel("Model")
+                        ModelPickerOrField(vm: vm)
 
                         if vm.provider.requiresAPIKey {
                             Divider()
-
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("API Key")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                    .textCase(.uppercase)
-                                if vm.provider == .anthropic {
-                                    SecureField("Anthropic API Key", text: $vm.anthropicKey)
-                                        .textInputAutocapitalization(.never)
-                                        .autocorrectionDisabled()
-                                } else if vm.provider == .openAI {
-                                    SecureField("OpenAI API Key", text: $vm.openAIKey)
-                                        .textInputAutocapitalization(.never)
-                                        .autocorrectionDisabled()
-                                }
+                            sectionLabel("API Key")
+                            if vm.provider == .anthropic {
+                                SecureField("sk-ant-…", text: $vm.anthropicKey)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                            } else if vm.provider == .openAI {
+                                SecureField("sk-…", text: $vm.openAIKey)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
                             }
                         }
                     }
@@ -150,5 +100,20 @@ struct OnboardingProviderView: View {
             .animation(.easeOut.delay(0.55), value: appeared)
         }
         .onAppear { appeared = true }
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+    }
+
+    private var endpointBinding: Binding<String> {
+        switch vm.provider {
+        case .ollama: return $vm.ollamaEndpoint
+        case .lmStudio: return $vm.lmStudioEndpoint
+        default: return .constant("")
+        }
     }
 }
