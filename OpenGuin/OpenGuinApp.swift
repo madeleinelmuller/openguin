@@ -8,6 +8,7 @@ struct OpenGuinApp: App {
         WindowGroup {
             ContentView()
                 .environment(env)
+                .preferredColorScheme(.dark)
                 .task {
                     await NotificationManager.shared.requestPermission()
                 }

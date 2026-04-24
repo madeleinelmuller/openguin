@@ -4,47 +4,77 @@ struct ProviderSettingsView: View {
     @Bindable var vm: SettingsViewModel
 
     var body: some View {
-        Section("Provider") {
+        Section {
             Picker("Provider", selection: $vm.provider) {
-                ForEach(LLMProvider.allCases) { provider in
-                    Text(provider.displayName).tag(provider)
+                ForEach(LLMProvider.allCases) { p in
+                    Text(p.displayName).tag(p)
                 }
             }
             .pickerStyle(.segmented)
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+        } header: {
+            Label("Provider", systemImage: "cpu")
         }
 
         if vm.provider.hasCustomEndpoint {
             Section {
                 EndpointField(provider: vm.provider, endpoint: endpointBinding)
+                fetchModelsRow
             } header: {
                 Text("Server")
             } footer: {
-                Text("Just enter host and port. The \u{2018}/v1\u{2019} path is added automatically.")
+                if let err = vm.modelFetchError {
+                    Text(err).foregroundStyle(.red)
+                } else {
+                    Text("Enter your local server address, then tap Fetch Models.")
+                }
             }
         }
 
-        Section("Model") {
+        Section {
             ModelPickerOrField(vm: vm)
+        } header: {
+            Label("Model", systemImage: "sparkles")
         }
 
         if vm.provider.requiresAPIKey {
             Section {
-                if vm.provider == .anthropic {
-                    SecureField("sk-ant-…", text: $vm.anthropicKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                } else if vm.provider == .openAI {
-                    SecureField("sk-…", text: $vm.openAIKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                }
+                apiKeyField
             } header: {
-                Text("API Key")
+                Label("API Key", systemImage: "key.fill")
             } footer: {
-                Text("Stored locally on your device. Only sent to the provider you choose.")
+                Text("Stored locally. Only sent to the provider you choose.")
             }
+        }
+    }
+
+    @ViewBuilder
+    private var fetchModelsRow: some View {
+        Button {
+            Task { await vm.fetchModels() }
+        } label: {
+            HStack {
+                Label("Fetch Models", systemImage: "arrow.clockwise")
+                Spacer()
+                if vm.isFetchingModels {
+                    ProgressView().scaleEffect(0.8)
+                }
+            }
+        }
+        .disabled(vm.isFetchingModels)
+    }
+
+    @ViewBuilder
+    private var apiKeyField: some View {
+        if vm.provider == .anthropic {
+            SecureField("sk-ant-…", text: $vm.anthropicKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+        } else if vm.provider == .openAI {
+            SecureField("sk-…", text: $vm.openAIKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
         }
     }
 
@@ -57,7 +87,7 @@ struct ProviderSettingsView: View {
     }
 }
 
-// MARK: - Endpoint field with live normalization preview
+// MARK: - Endpoint field
 
 struct EndpointField: View {
     let provider: LLMProvider
@@ -67,7 +97,6 @@ struct EndpointField: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("Endpoint")
-                    .foregroundStyle(.primary)
                 Spacer()
                 TextField(provider.defaultEndpoint, text: $endpoint)
                     .textInputAutocapitalization(.never)
@@ -75,7 +104,6 @@ struct EndpointField: View {
                     .keyboardType(.URL)
                     .multilineTextAlignment(.trailing)
             }
-
             Text("→ \(fullURL)")
                 .font(.caption.monospaced())
                 .foregroundStyle(.tertiary)
@@ -96,26 +124,37 @@ struct ModelPickerOrField: View {
     @Bindable var vm: SettingsViewModel
 
     var body: some View {
-        switch vm.provider {
+        let p = vm.provider
+        let fetched = vm.fetchedModels(for: p)
+
+        switch p {
         case .anthropic, .openAI:
             Picker("Model", selection: $vm.model) {
-                ForEach(vm.provider.availableModels, id: \.self) { m in
+                ForEach(p.availableModels, id: \.self) { m in
                     Text(m).tag(m)
                 }
-                // Accept stored models that aren't in the hardcoded list
-                // (e.g. newer model names) so the picker can still select them.
-                if !vm.provider.availableModels.contains(vm.model), !vm.model.isEmpty {
+                if !p.availableModels.contains(vm.model), !vm.model.isEmpty {
                     Text("\(vm.model) (custom)").tag(vm.model)
                 }
             }
+
         case .ollama, .lmStudio:
-            HStack {
-                Text("Name")
-                Spacer()
-                TextField(vm.provider.defaultModel, text: $vm.model)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .multilineTextAlignment(.trailing)
+            if fetched.isEmpty {
+                HStack {
+                    Text("Model")
+                    Spacer()
+                    TextField(p.defaultModel, text: $vm.model)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .multilineTextAlignment(.trailing)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Picker("Model", selection: $vm.model) {
+                    ForEach(fetched, id: \.self) { m in
+                        Text(m).tag(m)
+                    }
+                }
             }
         }
     }

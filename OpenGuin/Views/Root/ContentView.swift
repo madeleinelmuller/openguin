@@ -44,6 +44,8 @@ struct ContentView: View {
                 SettingsView(vm: settingsVM)
             }
         }
+        .toolbarBackground(.hidden, for: .tabBar)
+        .background(Color.black)
         .onReceive(NotificationCenter.default.publisher(for: .switchToChat)) { _ in
             selectedTab = .chat
         }

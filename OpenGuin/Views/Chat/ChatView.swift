@@ -12,6 +12,7 @@ struct ChatView: View {
                 isStreaming: vm.isStreaming,
                 activeToolName: vm.activeToolName
             )
+            .background(Color.black)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 ChatInputBar(
                     text: $vm.inputText,

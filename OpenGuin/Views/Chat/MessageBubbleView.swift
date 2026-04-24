@@ -17,21 +17,17 @@ struct MessageBubbleView: View {
         .padding(.vertical, 2)
     }
 
-    // MARK: - User bubble
-
     private var userBubble: some View {
         Text(message.content)
             .font(.body)
-            .foregroundStyle(.white)
+            .foregroundStyle(.black)
             .textSelection(.enabled)
             .padding(.horizontal, 16)
             .padding(.vertical, 11)
             .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .shadow(color: .accentColor.opacity(0.25), radius: 8, y: 4)
+            .shadow(color: Color.accentColor.opacity(0.35), radius: 10, y: 4)
             .contextMenu { copyButton }
     }
-
-    // MARK: - Assistant bubble
 
     private var assistantBubble: some View {
         RevealingText(text: message.content, isRevealed: message.isRevealed)
@@ -41,7 +37,7 @@ struct MessageBubbleView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 11)
             .adaptiveGlass(.regular, shape: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .shadow(color: .black.opacity(0.06), radius: 8, y: 4)
+            .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
             .contextMenu { copyButton }
     }
 
@@ -55,11 +51,14 @@ struct MessageBubbleView: View {
 }
 
 #Preview {
-    ScrollView {
-        VStack(spacing: 8) {
-            MessageBubbleView(message: ChatMessage(role: .user, content: "Hey, what's the weather like?"))
-            MessageBubbleView(message: ChatMessage(role: .assistant, content: "Let me check that for you! It looks like it's going to be a beautiful day — sunny with highs around 72°F.", isRevealed: true))
+    ZStack {
+        Color.black.ignoresSafeArea()
+        ScrollView {
+            VStack(spacing: 8) {
+                MessageBubbleView(message: ChatMessage(role: .user, content: "Hey, what's the weather like?"))
+                MessageBubbleView(message: ChatMessage(role: .assistant, content: "Let me check that for you! It looks like it's going to be a beautiful day — sunny with highs around 72°F.", isRevealed: true))
+            }
+            .padding(.vertical)
         }
-        .padding(.vertical)
     }
 }

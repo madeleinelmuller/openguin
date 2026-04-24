@@ -9,7 +9,8 @@ struct OnboardingProviderView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            VStack(spacing: 12) {
+            // Header
+            VStack(spacing: 10) {
                 Image(systemName: "cpu.fill")
                     .font(.system(size: 44))
                     .foregroundStyle(Color.accentColor)
@@ -21,7 +22,7 @@ struct OnboardingProviderView: View {
                     .opacity(appeared ? 1 : 0)
                     .animation(.easeOut.delay(0.2), value: appeared)
 
-                Text("Pick a provider and add your API key, or connect to a local model.")
+                Text("Pick a provider and add your API key,\nor connect to a local model.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -29,45 +30,57 @@ struct OnboardingProviderView: View {
                     .opacity(appeared ? 1 : 0)
                     .animation(.easeOut.delay(0.3), value: appeared)
             }
-            .padding(.bottom, 32)
+            .padding(.bottom, 28)
 
+            // Card
             GlassCard(cornerRadius: 24, padding: 20) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        sectionLabel("Provider")
-                        Picker("Provider", selection: $vm.provider) {
-                            ForEach(LLMProvider.allCases) { provider in
-                                Text(provider.displayName).tag(provider)
-                            }
+                VStack(alignment: .leading, spacing: 0) {
+                    // Provider picker
+                    sectionLabel("Provider")
+                        .padding(.bottom, 8)
+                    Picker("Provider", selection: $vm.provider) {
+                        ForEach(LLMProvider.allCases) { p in
+                            Text(p.displayName).tag(p)
                         }
-                        .pickerStyle(.segmented)
+                    }
+                    .pickerStyle(.segmented)
 
-                        if vm.provider.hasCustomEndpoint {
-                            Divider()
-                            sectionLabel("Server")
-                            EndpointField(provider: vm.provider, endpoint: endpointBinding)
-                            Text("Just host and port — the \u{2018}/v1\u{2019} path is added automatically.")
+                    Divider().padding(.vertical, 16)
+
+                    // Endpoint (local providers)
+                    if vm.provider.hasCustomEndpoint {
+                        sectionLabel("Server")
+                            .padding(.bottom, 8)
+                        EndpointField(provider: vm.provider, endpoint: endpointBinding)
+
+                        fetchModelsButton
+                            .padding(.top, 10)
+
+                        if let err = vm.modelFetchError {
+                            Text(err)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.red)
+                                .padding(.top, 4)
                         }
 
-                        Divider()
-                        sectionLabel("Model")
-                        ModelPickerOrField(vm: vm)
+                        Divider().padding(.vertical, 16)
+                    }
 
-                        if vm.provider.requiresAPIKey {
-                            Divider()
-                            sectionLabel("API Key")
-                            if vm.provider == .anthropic {
-                                SecureField("sk-ant-…", text: $vm.anthropicKey)
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                            } else if vm.provider == .openAI {
-                                SecureField("sk-…", text: $vm.openAIKey)
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                            }
-                        }
+                    // Model
+                    sectionLabel("Model")
+                        .padding(.bottom, 8)
+                    ModelPickerOrField(vm: vm)
+
+                    // API key
+                    if vm.provider.requiresAPIKey {
+                        Divider().padding(.vertical, 16)
+                        sectionLabel("API Key")
+                            .padding(.bottom, 8)
+                        apiKeyField
+                        Text("Stored locally on your device.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .padding(.top, 4)
                     }
                 }
             }
@@ -78,21 +91,20 @@ struct OnboardingProviderView: View {
 
             Spacer()
 
+            // Actions
             VStack(spacing: 12) {
-                HapticButton(.medium, action: onNext) {
+                Button(action: onNext) {
                     Text("Continue")
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.black)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
-                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
 
-                Button("I'll set this up later") {
-                    onNext()
-                }
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Button("I'll set this up later", action: onNext)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 52)
@@ -105,8 +117,46 @@ struct OnboardingProviderView: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text)
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Color.accentColor)
             .textCase(.uppercase)
+            .tracking(0.8)
+    }
+
+    @ViewBuilder
+    private var fetchModelsButton: some View {
+        Button {
+            Task { await vm.fetchModels() }
+        } label: {
+            HStack(spacing: 6) {
+                if vm.isFetchingModels {
+                    ProgressView().scaleEffect(0.75)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .medium))
+                }
+                Text(vm.isFetchingModels ? "Fetching…" : "Fetch Models")
+                    .font(.subheadline.weight(.medium))
+            }
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .adaptiveGlass(.interactive, shape: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(vm.isFetchingModels)
+    }
+
+    @ViewBuilder
+    private var apiKeyField: some View {
+        if vm.provider == .anthropic {
+            SecureField("sk-ant-…", text: $vm.anthropicKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+        } else if vm.provider == .openAI {
+            SecureField("sk-…", text: $vm.openAIKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+        }
     }
 
     private var endpointBinding: Binding<String> {
