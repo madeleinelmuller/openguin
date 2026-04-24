@@ -8,6 +8,8 @@ actor ToolDispatcher {
     private let reminders = RemindersService.shared
     private let webSearch = WebSearchService.shared
     private let sandbox = SandboxService.shared
+    private let location = LocationService.shared
+    private let weather = WeatherService.shared
 
     private init() {}
 
@@ -90,6 +92,15 @@ actor ToolDispatcher {
             let code = input["code"] as? String ?? ""
             let filename = input["filename"] as? String
             return await sandbox.execute(language: language, code: code, filename: filename)
+
+        // MARK: Location / Weather
+        case .getLocation:
+            return await location.describeCurrent()
+
+        case .getWeather:
+            let lat = input["latitude"] as? Double
+            let lon = input["longitude"] as? Double
+            return await weather.weatherSummary(latitude: lat, longitude: lon)
 
         // MARK: System
         case .getCurrentTime:

@@ -91,6 +91,17 @@ enum SystemPromptBuilder {
 
         ---
 
+        ## Location & Weather
+
+        You can read \(name)'s current location and fetch real weather data.
+
+        - **get_location**: Returns the user's current city, region, and coordinates. Requires permission — the first call may trigger the iOS permission prompt.
+        - **get_weather**: Returns current conditions, today's forecast, and the next few hours. Defaults to the user's current location; pass `latitude` and `longitude` to look up another place.
+
+        Use these proactively when \(name) asks about the weather, mentions going outside, packing, travel plans, or anything where local conditions matter. Don't guess — call the tool.
+
+        ---
+
         ## Files and Code
 
         - **read_file / write_file / list_files / delete_file / create_directory**: Manage your memory filesystem. Use workspace/ for user documents and projects.

@@ -10,7 +10,6 @@ struct ChatInputBar: View {
     @FocusState private var isFocused: Bool
     @State private var isRecordingActive = false
     @State private var isFinishing = false
-    @State private var introPlaying = true
     @State private var bounceArrow = false
     @State private var dotPulse = false
 
@@ -18,17 +17,14 @@ struct ChatInputBar: View {
     private let mediumGen = UIImpactFeedbackGenerator(style: .medium)
     private let rigidGen  = UIImpactFeedbackGenerator(style: .rigid)
 
-    // MARK: - Phase
-
     private enum InputPhase: Equatable {
-        case intro, idle, focused, typing, streaming, finishing, recording
+        case idle, focused, typing, streaming, finishing, recording
     }
 
     private var phase: InputPhase {
         if isRecordingActive { return .recording }
         if isStreaming        { return .streaming }
         if isFinishing        { return .finishing }
-        if introPlaying       { return .intro }
         if hasText            { return .typing }
         if isFocused          { return .focused }
         return .idle
@@ -45,7 +41,7 @@ struct ChatInputBar: View {
         }
     }
 
-    // MARK: - Body
+    private let controlSize: CGFloat = 44
 
     var body: some View {
         Group {
@@ -55,89 +51,55 @@ struct ChatInputBar: View {
                 fallbackBody
             }
         }
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: separated)
-        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: phase)
+        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: separated)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: phase)
         .onChange(of: isStreaming) { old, new in
             guard old && !new else { return }
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) { isFinishing = true }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { isFinishing = true }
         }
         .onChange(of: phase) { _, p in
             dotPulse = (p == .recording)
         }
     }
 
-    // MARK: - iOS 26 Liquid Glass Body
+    // MARK: - iOS 26
 
     @available(iOS 26.0, *)
     private var glassBody: some View {
         GlassEffectContainer {
-            HStack(alignment: .bottom, spacing: separated ? 8 : 0) {
+            HStack(alignment: .center, spacing: separated ? 8 : 0) {
                 pillContent
                     .glassEffect(.regular, in: Capsule())
-                    .scaleEffect(isFocused ? 1.006 : 1.0, anchor: .bottom)
-                    .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isFocused)
-
-                circleButton26
+                circleButton
+                    .glassEffect(phase == .typing || phase == .recording ? .regular : .regular.interactive(),
+                                 in: Circle())
             }
         }
     }
-
-    @available(iOS 26.0, *)
-    @ViewBuilder
-    private var circleButton26: some View {
-        switch phase {
-        case .typing, .recording:
-            solidCircleButton
-        default:
-            Button { handleCircleButtonTap() } label: {
-                circleContent.frame(width: 44, height: 44)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: Circle())
-            .allowsHitTesting(phase != .finishing && phase != .intro)
-        }
-    }
-
-    // MARK: - iOS <26 Fallback Body
 
     private var fallbackBody: some View {
-        HStack(alignment: .bottom, spacing: separated ? 8 : 0) {
+        HStack(alignment: .center, spacing: separated ? 8 : 0) {
             pillContent
                 .background(.ultraThinMaterial, in: Capsule())
-
-            if phase == .typing || phase == .recording {
-                solidCircleButton
-            } else {
-                Button { handleCircleButtonTap() } label: {
-                    circleContent
-                        .frame(width: 44, height: 44)
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .disabled(phase == .finishing || phase == .intro)
-            }
+            circleButton
+                .background(
+                    (phase == .typing || phase == .recording)
+                        ? AnyShapeStyle(Color.accentColor)
+                        : AnyShapeStyle(.ultraThinMaterial),
+                    in: Circle()
+                )
         }
     }
 
-    private var solidCircleButton: some View {
-        Button { handleCircleButtonTap() } label: {
-            circleContent
-                .frame(width: 44, height: 44)
-                .background(Color.accentColor, in: Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Pill Content
+    // MARK: - Pill
 
     private var pillContent: some View {
         HStack(spacing: 8) {
-            // Mic button — visible in idle, focused, intro, recording
-            if phase == .idle || phase == .focused || phase == .intro || phase == .recording {
-                Button { handleMicTap() } label: {
+            if phase == .idle || phase == .focused || phase == .recording {
+                Button(action: handleMicTap) {
                     Image(systemName: "mic.fill")
                         .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(phase == .recording ? .red : .secondary)
+                        .foregroundStyle(phase == .recording ? Color.red : Color.secondary)
                         .symbolEffect(.pulse, options: .repeating, isActive: phase == .recording)
                         .frame(width: 30, height: 30)
                         .contentShape(Circle())
@@ -146,95 +108,89 @@ struct ChatInputBar: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.7, anchor: .leading)))
             }
 
-            // Main field: waveform when recording, text field otherwise
             if phase == .recording {
                 HStack(spacing: 8) {
                     Circle()
                         .fill(.red)
                         .frame(width: 8, height: 8)
                         .scaleEffect(dotPulse ? 1.35 : 0.7)
-                        .animation(
-                            .easeInOut(duration: 0.55).repeatForever(autoreverses: true),
-                            value: dotPulse
-                        )
-
+                        .animation(.easeInOut(duration: 0.55).repeatForever(autoreverses: true), value: dotPulse)
                     VoiceWaveformView(levels: recording.audioLevels)
                         .frame(maxWidth: .infinity)
                 }
-                .transition(.blurReplace)
+                .frame(minHeight: 24)
+                .transition(.opacity)
             } else {
                 TextField("Message Openguin…", text: $text, axis: .vertical)
                     .lineLimit(1...6)
                     .font(.body)
                     .focused($isFocused)
-                    .disabled(phase == .streaming || phase == .finishing || phase == .intro)
+                    .disabled(phase == .streaming || phase == .finishing)
                     .opacity((phase == .streaming || phase == .finishing) ? 0.45 : 1.0)
-                    .animation(.spring(response: 0.3), value: phase)
+                    .frame(minHeight: 24)
                     .onSubmit {
-                        guard hasText else { return }
-                        handleSend()
+                        if hasText { handleSend() }
                     }
                     .transition(.opacity)
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: phase)
+        .padding(.leading, 6)
+        .padding(.trailing, 14)
+        .padding(.vertical, 8)
+        .frame(minHeight: controlSize)
     }
 
-    // MARK: - Circle Content
+    // MARK: - Circle Button
 
-    @ViewBuilder
-    private var circleContent: some View {
-        ZStack {
-            if phase == .idle || phase == .focused {
-                Image("openguin")
-                    .resizable()
-                    .scaledToFit()
-                    .padding(6)
-                    .transition(.opacity.combined(with: .scale(scale: 0.85)))
-            }
-
-            if phase == .intro {
-                LoadingPenguin(size: 36, isAnimating: false, fps: 14, onFinished: {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        introPlaying = false
-                    }
-                })
-                .allowsHitTesting(false)
-                .transition(.opacity)
-            }
-
-            if phase == .typing {
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .symbolEffect(.bounce, options: .nonRepeating, isActive: bounceArrow)
-                    .transition(.opacity.combined(with: .scale(scale: 0.5)))
-            }
-
-            if phase == .streaming {
-                LoadingPenguin(size: 36, isAnimating: true, fps: 14)
+    private var circleButton: some View {
+        Button(action: handleCircleButtonTap) {
+            ZStack {
+                switch phase {
+                case .idle, .focused:
+                    penguinLogo
+                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                case .typing:
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.white)
+                        .symbolEffect(.bounce, options: .nonRepeating, isActive: bounceArrow)
+                        .transition(.opacity.combined(with: .scale(scale: 0.5)))
+                case .streaming:
+                    LoadingPenguin(size: 36, isAnimating: true, fps: 14)
+                        .allowsHitTesting(false)
+                        .transition(.opacity)
+                case .finishing:
+                    LoadingPenguin(size: 36, isAnimating: false, fps: 14, onFinished: {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                            isFinishing = false
+                        }
+                    })
                     .allowsHitTesting(false)
                     .transition(.opacity)
+                case .recording:
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.white)
+                        .transition(.opacity.combined(with: .scale(scale: 0.5)))
+                }
             }
+            .frame(width: controlSize, height: controlSize)
+        }
+        .buttonStyle(.plain)
+        .disabled(phase == .finishing)
+    }
 
-            if phase == .finishing {
-                LoadingPenguin(size: 36, isAnimating: false, fps: 14, onFinished: {
-                    withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
-                        isFinishing = false
-                    }
-                })
-                .allowsHitTesting(false)
-                .transition(.opacity)
-            }
-
-            if phase == .recording {
-                Image(systemName: "checkmark")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .transition(.opacity.combined(with: .scale(scale: 0.5)))
-            }
+    @ViewBuilder
+    private var penguinLogo: some View {
+        if UIImage(named: "openguin") != nil {
+            Image("openguin")
+                .resizable()
+                .scaledToFit()
+                .padding(7)
+        } else {
+            Image(systemName: "bird.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -244,7 +200,7 @@ struct ChatInputBar: View {
         if phase == .recording {
             lightGen.impactOccurred()
             recording.cancelRecording()
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 isRecordingActive = false
             }
         } else {
@@ -253,7 +209,7 @@ struct ChatInputBar: View {
                 try? await Task.sleep(for: .milliseconds(80))
                 await MainActor.run { rigidGen.impactOccurred(intensity: 1.0) }
             }
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                 isRecordingActive = true
             }
             Task {
@@ -271,7 +227,7 @@ struct ChatInputBar: View {
 
     private func handleCircleButtonTap() {
         switch phase {
-        case .idle, .focused, .intro:
+        case .idle, .focused:
             lightGen.impactOccurred()
             isFocused = true
 
@@ -293,7 +249,7 @@ struct ChatInputBar: View {
             Task {
                 let transcript = await recording.stopAndTranscribe()
                 await MainActor.run {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                         isRecordingActive = false
                     }
                     if let t = transcript, !t.isEmpty {
@@ -301,8 +257,6 @@ struct ChatInputBar: View {
                         handleSend()
                     }
                 }
-                try? await Task.sleep(for: .milliseconds(60))
-                await MainActor.run { lightGen.impactOccurred() }
             }
 
         case .finishing:
