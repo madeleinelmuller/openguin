@@ -23,9 +23,11 @@ struct MessageBubbleView: View {
         Text(message.content)
             .font(.body)
             .foregroundStyle(.white)
+            .textSelection(.enabled)
             .padding(.horizontal, 16)
             .padding(.vertical, 11)
             .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .shadow(color: .accentColor.opacity(0.25), radius: 8, y: 4)
             .contextMenu { copyButton }
     }
 
@@ -35,9 +37,11 @@ struct MessageBubbleView: View {
         RevealingText(text: message.content, isRevealed: message.isRevealed)
             .font(.body)
             .foregroundStyle(.primary)
+            .textSelection(.enabled)
             .padding(.horizontal, 16)
             .padding(.vertical, 11)
             .adaptiveGlass(.regular, shape: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .shadow(color: .black.opacity(0.06), radius: 8, y: 4)
             .contextMenu { copyButton }
     }
 
