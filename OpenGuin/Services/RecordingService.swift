@@ -44,6 +44,11 @@ final class RecordingService {
     }
 
     func startRecording() async {
+        if case .recording = state { return }   // guard double-start
+        state = .idle                            // reset any stale state
+        recorder = nil
+        audioLevels = Array(repeating: 0, count: 30)
+
         guard await requestPermissions() else {
             state = .failed("Microphone or speech recognition permission denied.")
             return
@@ -83,6 +88,7 @@ final class RecordingService {
     func stopAndTranscribe() async -> String? {
         stopLevelMonitoring()
         recorder?.stop()
+        recorder = nil
         state = .transcribing
 
         guard let url = recordingURL else {
@@ -106,7 +112,9 @@ final class RecordingService {
     func cancelRecording() {
         stopLevelMonitoring()
         recorder?.stop()
+        recorder?.deleteRecording()
         recorder = nil
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         state = .idle
         audioLevels = Array(repeating: 0, count: 30)
     }

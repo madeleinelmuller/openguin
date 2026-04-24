@@ -6,25 +6,33 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Your Name") {
+                Section {
                     TextField("Name", text: $vm.userName)
                         .textInputAutocapitalization(.words)
+                } header: {
+                    Label("Your Name", systemImage: "person.fill")
                 }
 
                 ProviderSettingsView(vm: vm)
 
-                Section("Advanced") {
+                Section {
                     Stepper("Max tokens: \(vm.maxTokens)", value: $vm.maxTokens, in: 1024...32768, step: 1024)
+                } header: {
+                    Label("Advanced", systemImage: "slider.horizontal.3")
                 }
 
                 PermissionsSettingsView()
 
-                Section("About") {
+                Section {
                     LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
                     LabeledContent("Build", value: Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1")
+                } header: {
+                    Label("About", systemImage: "info.circle.fill")
                 }
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
     }
 }
